@@ -1,5 +1,10 @@
 [
   {
+    "version": "26.09.2026",
+    "description": "- Cập nhật icon app",
+    "order": 31
+  },
+  {
     "version": "30.07.2026",
     "description": "- Cập nhật giao diện ngôn ngữ\n- Chỉnh sửa giao diện",
     "order": 30
