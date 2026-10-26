@@ -20,7 +20,8 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.satsboy87.heodatbeo"
+      "package": "com.satsboy87.heodatbeo",
+      "versionCode": 32
     },
     "web": {
       "favicon": "./assets/savepig.jpg"
