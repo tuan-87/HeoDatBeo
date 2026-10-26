@@ -19,7 +19,8 @@ try {
   }
 
   const latestVersion = versionHistory[0].version;
-  console.log(`Latest app version from history: ${latestVersion}`);
+  const latestOrder = parseInt(versionHistory[0].order, 10);
+  console.log(`Latest app version from history: ${latestVersion} (order/versionCode: ${latestOrder})`);
 
   // 1. Update package.json
   if (fs.existsSync(packageJsonPath)) {
@@ -61,15 +62,33 @@ try {
     console.log('package-lock.json not found, skipping.');
   }
 
-  // 3. Update app.json
+  // 3. Update app.json (version & versionCode)
   if (fs.existsSync(appJsonPath)) {
     const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
-    if (appJson.expo && appJson.expo.version !== latestVersion) {
-      console.log(`Updating app.json expo.version from ${appJson.expo.version} to ${latestVersion}`);
-      appJson.expo.version = latestVersion;
+    let appJsonUpdated = false;
+
+    if (appJson.expo) {
+      if (appJson.expo.version !== latestVersion) {
+        console.log(`Updating app.json expo.version from ${appJson.expo.version} to ${latestVersion}`);
+        appJson.expo.version = latestVersion;
+        appJsonUpdated = true;
+      }
+
+      if (!appJson.expo.android) {
+        appJson.expo.android = {};
+      }
+
+      if (appJson.expo.android.versionCode !== latestOrder) {
+        console.log(`Updating app.json expo.android.versionCode from ${appJson.expo.android.versionCode} to ${latestOrder}`);
+        appJson.expo.android.versionCode = latestOrder;
+        appJsonUpdated = true;
+      }
+    }
+
+    if (appJsonUpdated) {
       fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + '\n', 'utf8');
     } else {
-      console.log('app.json version is already up to date.');
+      console.log('app.json version and versionCode are already up to date.');
     }
   } else {
     console.warn('Warning: app.json not found!');
