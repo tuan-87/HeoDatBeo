@@ -93,7 +93,7 @@ async function main() {
   // 4. Commit edit session
   console.log('4. Đang commit thay đổi lên Google Play Store...');
   await client.request({
-    url: `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits/${editId}:commit`,
+    url: `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/edits/${editId}:commit?changesNotSentForReview=true`,
     method: 'POST',
   });
 
