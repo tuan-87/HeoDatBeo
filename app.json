@@ -33,6 +33,12 @@
     "notification": {
       "icon": "./assets/savepig.jpg",
       "color": "#ffffff"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "44f6b861-e1ec-448b-8c05-6a2c49e3ebef"
+      }
+    },
+    "owner": "satsboy87"
   }
 }
