@@ -81,6 +81,8 @@ export const en = {
     transferTitle: "Allocate to \"{name}\"",
     deposit: "Add Money",
     withdraw: "Withdraw Money",
+    depositTo: "Deposit to",
+    withdrawFrom: "Withdraw from",
     confirmDeposit: "Confirm Deposit",
     confirmWithdraw: "Confirm Withdrawal",
     deleteTitle: "Confirm Fund Deletion",

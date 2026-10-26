@@ -12,6 +12,7 @@ import GoldHistoryScreen from "../screens/GoldHistoryScreen";
 import DeletedCategoriesScreen from "../screens/DeletedCategoriesScreen";
 import DeletedFundsScreen from "../screens/DeletedFundsScreen";
 import YearlyReportScreen from "../screens/YearlyReportScreen";
+import AIAssistantScreen from "../screens/AIAssistantScreen";
 import { storage } from "../store/storage";
 import { View, ActivityIndicator } from "react-native";
 import { scheduleDailyReminder } from "../utils/notifications";
@@ -57,6 +58,7 @@ const RootNavigator = () => {
       <Stack.Screen name="DeletedCategories" component={DeletedCategoriesScreen} />
       <Stack.Screen name="DeletedFunds" component={DeletedFundsScreen} />
       <Stack.Screen name="YearlyReport" component={YearlyReportScreen} />
+      <Stack.Screen name="AIAssistant" component={AIAssistantScreen} />
     </Stack.Navigator>
   );
 };

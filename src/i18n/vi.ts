@@ -81,6 +81,8 @@ export const vi = {
     transferTitle: "Phân bổ cho \"{name}\"",
     deposit: "Nạp thêm",
     withdraw: "Rút ra",
+    depositTo: "Nạp vào",
+    withdrawFrom: "Rút từ",
     confirmDeposit: "Xác nhận nạp",
     confirmWithdraw: "Xác nhận rút",
     deleteTitle: "Xác nhận xóa Quỹ",

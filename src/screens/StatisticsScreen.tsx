@@ -29,12 +29,7 @@ import {
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
-import {
-  X,
-  MoreHorizontal,
-  PencilLine,
-  PenOff,
-} from "lucide-react-native";
+import { X, MoreHorizontal, PencilLine, PenOff } from "lucide-react-native";
 import Keypad from "../components/Keypad";
 import { BarChart } from "react-native-gifted-charts";
 import { EXPENSE_ICONS, getIncomeIconSource } from "./MoneyDiaryScreen";
@@ -44,6 +39,7 @@ import { RootStackParamList } from "../navigation/types";
 import { styles } from "../styles/StatisticsScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLanguage } from "../i18n/LanguageContext";
+import { getMascotImage } from "../utils/mascot";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -87,7 +83,9 @@ const getTransactionIconSource = (
     return getIncomeIconSource(tx.categoryId || "income_khac", profile);
   }
 
-  const match = categoryBudgets.find((c) => tx.categoryId && c.id && isCategoryIdMatch(c.id, tx.categoryId));
+  const match = categoryBudgets.find(
+    (c) => tx.categoryId && c.id && isCategoryIdMatch(c.id, tx.categoryId),
+  );
   const iconKey = match?.icon || "default";
   return EXPENSE_ICONS[iconKey] || EXPENSE_ICONS["default"];
 };
@@ -474,14 +472,17 @@ const StatisticsScreen = () => {
   const [historyDayLimit, setHistoryDayLimit] = useState<number>(10);
   const [historyMonthLimit, setHistoryMonthLimit] = useState<number>(3);
   const [historyYearLimit, setHistoryYearLimit] = useState<number>(2);
-  const [historyTab, setHistoryTab] = useState<'day' | 'month' | 'year'>('day');
+  const [historyTab, setHistoryTab] = useState<"day" | "month" | "year">("day");
 
   const loadNotificationHistory = async () => {
     try {
       const txs = await storage.getTransactions();
       await syncNotificationHistory(txs);
     } catch (e) {
-      console.error("Failed to sync notification history in loadNotificationHistory:", e);
+      console.error(
+        "Failed to sync notification history in loadNotificationHistory:",
+        e,
+      );
     }
     const data = await storage.getNotificationHistory();
     setNotificationHistory(data);
@@ -489,7 +490,6 @@ const StatisticsScreen = () => {
     setHistoryMonthLimit(3);
     setHistoryYearLimit(2);
   };
-
 
   const [period, setPeriod] = useState<FilterPeriod>("day");
   const [type, setType] = useState<FilterType>("all");
@@ -542,6 +542,8 @@ const StatisticsScreen = () => {
   const [showEditNoteModal, setShowEditNoteModal] = useState(false);
   const [editNote, setEditNote] = useState("");
   const editNoteInputRef = React.useRef<TextInput>(null);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [editDate, setEditDate] = useState<Date>(new Date());
 
   useEffect(() => {
     if (isFocused) {
@@ -659,7 +661,11 @@ const StatisticsScreen = () => {
     if (c === "Khác") {
       filtered = filtered.filter((tx) => {
         const resolvedName = resolveCategoryName(tx, profile, categoryBudgets);
-        return resolvedName === "Khác" || tx.categoryId === "expense_khac" || tx.categoryId === "income_khac";
+        return (
+          resolvedName === "Khác" ||
+          tx.categoryId === "expense_khac" ||
+          tx.categoryId === "income_khac"
+        );
       });
     } else if (c !== "all") {
       filtered = filtered.filter(
@@ -673,14 +679,11 @@ const StatisticsScreen = () => {
 
   // YC 1, 2, 3: Hoàn tiền thông minh khi xóa giao dịch
   const handleDelete = useCallback(async (tx: Transaction) => {
-    // YC 2: Chỉ được xóa trong vòng 3 ngày kể từ khi lưu
-    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    // Chỉ được xóa trong vòng 45 ngày kể từ khi lưu
+    const MAX_EDIT_DAYS_MS = 45 * 24 * 60 * 60 * 1000;
     const elapsed = Date.now() - tx.timestamp;
-    if (elapsed > THREE_DAYS_MS) {
-      Alert.alert(
-        "Không thể xóa",
-        "Giao dịch đã quá 3 ngày, không thể xóa.",
-      );
+    if (elapsed > MAX_EDIT_DAYS_MS) {
+      Alert.alert("Không thể xóa", "Giao dịch đã quá 45 ngày, không thể xóa.");
       return;
     }
 
@@ -761,7 +764,9 @@ const StatisticsScreen = () => {
                 await storage.saveUserProfile(updatedProfile);
 
                 // Nếu danh mục vẫn còn tồn tại
-                const existingCat = cats.find((b) => b.id === tx.categoryId || b.name === catName);
+                const existingCat = cats.find(
+                  (b) => b.id === tx.categoryId || b.name === catName,
+                );
                 if (existingCat) {
                   const isDirect = existingCat.type === "direct";
                   const updatedCats = cats.map((b) =>
@@ -826,12 +831,12 @@ const StatisticsScreen = () => {
 
   const handleEditPress = () => {
     if (!selectedTxForAction) return;
-    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+    const MAX_EDIT_DAYS_MS = 45 * 24 * 60 * 60 * 1000;
     const elapsed = Date.now() - selectedTxForAction.timestamp;
-    if (elapsed > THREE_DAYS_MS) {
+    if (elapsed > MAX_EDIT_DAYS_MS) {
       Alert.alert(
         "Không thể sửa",
-        "Giao dịch đã quá 3 ngày, không thể sửa số tiền.",
+        "Giao dịch đã quá 45 ngày, không thể sửa số tiền.",
       );
       return;
     }
@@ -842,9 +847,34 @@ const StatisticsScreen = () => {
 
   const handleEditNotePress = () => {
     if (!selectedTxForAction) return;
+    const MAX_EDIT_DAYS_MS = 45 * 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - selectedTxForAction.timestamp;
+    if (elapsed > MAX_EDIT_DAYS_MS) {
+      Alert.alert(
+        "Không thể sửa",
+        "Giao dịch đã quá 45 ngày, không thể sửa ghi chú.",
+      );
+      return;
+    }
     setEditNote(selectedTxForAction.note || "");
     setShowOptionsModal(false);
     setShowEditNoteModal(true);
+  };
+
+  const handleEditDatePress = () => {
+    if (!selectedTxForAction) return;
+    const MAX_EDIT_DAYS_MS = 45 * 24 * 60 * 60 * 1000;
+    const elapsed = Date.now() - selectedTxForAction.timestamp;
+    if (elapsed > MAX_EDIT_DAYS_MS) {
+      Alert.alert(
+        "Không thể sửa",
+        "Giao dịch đã quá 45 ngày, không thể sửa thời gian.",
+      );
+      return;
+    }
+    setEditDate(new Date(selectedTxForAction.timestamp));
+    setShowOptionsModal(false);
+    setShowEditDatePicker(true);
   };
 
   const executeEditTransaction = async () => {
@@ -1053,6 +1083,58 @@ const StatisticsScreen = () => {
     Alert.alert("Thành công", "Đã cập nhật ghi chú giao dịch.");
   };
 
+  const handleExecuteEditDate = async (event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android") {
+      setShowEditDatePicker(false);
+    }
+    if (event.type === "set" && selectedDate && selectedTxForAction) {
+      if (Platform.OS === "ios") {
+        setShowEditDatePicker(false);
+      }
+      // Giới hạn chỉ cho chọn ngày hôm nay trở về trước
+      if (selectedDate.getTime() > Date.now()) {
+        Alert.alert(
+          "Không hợp lệ",
+          "Thời gian giao dịch chỉ được chọn ngày hôm nay trở về trước.",
+        );
+        return;
+      }
+
+      const tx = selectedTxForAction;
+      const oldDate = new Date(tx.timestamp);
+      const newDate = new Date(selectedDate);
+      // Giữ nguyên giờ, phút, giây của giao dịch cũ
+      newDate.setHours(
+        oldDate.getHours(),
+        oldDate.getMinutes(),
+        oldDate.getSeconds(),
+        oldDate.getMilliseconds(),
+      );
+      const finalTimestamp = Math.min(newDate.getTime(), Date.now());
+
+      const allTxs = await storage.getTransactions();
+      const updatedTxs = allTxs.map((t) =>
+        t.id === tx.id ? { ...t, timestamp: finalTimestamp } : t,
+      );
+      await storage.updateTransactionsBulk(updatedTxs);
+      try {
+        await storage._addToTransactionDateIndex(finalTimestamp);
+        await storage._rebuildTransactionDateIndex();
+        await syncNotificationHistory(updatedTxs);
+      } catch (e) {
+        console.error(
+          "Error updating date index or syncNotificationHistory",
+          e,
+        );
+      }
+
+      loadTransactions();
+      setSelectedTxForAction(null);
+      Alert.alert("Thành công", "Đã cập nhật thời gian giao dịch.");
+    } else if (event.type === "dismissed") {
+      setShowEditDatePicker(false);
+    }
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: Transaction }) => (
@@ -1130,26 +1212,28 @@ const StatisticsScreen = () => {
 
   const getFilterCategories = () => {
     // Filter active expense categories
-    const activeExpenseBudgets = categoryBudgets.filter(b => b.deleteAt === null || b.deleteAt === undefined);
+    const activeExpenseBudgets = categoryBudgets.filter(
+      (b) => b.deleteAt === null || b.deleteAt === undefined,
+    );
     const expenseCats =
       activeExpenseBudgets.length > 0
         ? activeExpenseBudgets.map((b) => b.name)
-        : DEFAULT_EXPENSE_CATEGORIES.filter(c => c !== "Khác");
+        : DEFAULT_EXPENSE_CATEGORIES.filter((c) => c !== "Khác");
 
     let cats: string[];
-    const activeIncomeCategories = (profile?.incomeCategories || DEFAULT_INCOME_CATEGORIES).filter(
-      (c: any) => typeof c === "string" || c.deleteAt === null || c.deleteAt === undefined
+    const activeIncomeCategories = (
+      profile?.incomeCategories || DEFAULT_INCOME_CATEGORIES
+    ).filter(
+      (c: any) =>
+        typeof c === "string" ||
+        c.deleteAt === null ||
+        c.deleteAt === undefined,
     );
-    const rawIncomeCats = activeIncomeCategories.map(
-      (c: any) => (typeof c === "string" ? c : c.name)
+    const rawIncomeCats = activeIncomeCategories.map((c: any) =>
+      typeof c === "string" ? c : c.name,
     );
     if (type === "all") {
-      cats = Array.from(
-        new Set([
-          ...rawIncomeCats,
-          ...expenseCats,
-        ]),
-      );
+      cats = Array.from(new Set([...rawIncomeCats, ...expenseCats]));
     } else if (type === "income") {
       cats = rawIncomeCats;
     } else {
@@ -1162,7 +1246,9 @@ const StatisticsScreen = () => {
     // Thêm 'Khác' vào cuối cùng nếu nó có trong danh mục hoặc có giao dịch
     const hasKhacTx = transactions.some((tx) => {
       if (type !== "all" && tx.type !== type) return false;
-      return tx.categoryId === "expense_khac" || tx.categoryId === "income_khac";
+      return (
+        tx.categoryId === "expense_khac" || tx.categoryId === "income_khac"
+      );
     });
     if (includesKhac || hasKhacTx) {
       cats.push("Khác");
@@ -1193,10 +1279,7 @@ const StatisticsScreen = () => {
       categoryTotals[catName] = (categoryTotals[catName] || 0) + tx.amount;
     });
 
-    const total = Object.values(categoryTotals).reduce(
-      (sum, v) => sum + v,
-      0,
-    );
+    const total = Object.values(categoryTotals).reduce((sum, v) => sum + v, 0);
     if (total === 0) return [];
 
     const colors = [
@@ -1228,7 +1311,9 @@ const StatisticsScreen = () => {
       .filter((tx) => {
         const txCat = resolveCategoryName(tx, profile, categoryBudgets);
         return catName === "Khác"
-          ? (txCat === "Khác" || tx.categoryId === "expense_khac" || tx.categoryId === "income_khac")
+          ? txCat === "Khác" ||
+              tx.categoryId === "expense_khac" ||
+              tx.categoryId === "income_khac"
           : txCat === catName;
       })
       .sort((a, b) => b.timestamp - a.timestamp);
@@ -1339,9 +1424,9 @@ const StatisticsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-           <Text style={styles.headerTitle}>{t("stats.title")}</Text>
-          <TouchableOpacity
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Text style={styles.headerTitle}>{t("stats.title")}</Text>
+            <TouchableOpacity
               onPress={() => {
                 loadNotificationHistory();
                 setShowNotificationHistoryModal(true);
@@ -1353,14 +1438,15 @@ const StatisticsScreen = () => {
                 style={{ width: 24, height: 24, resizeMode: "contain" }}
               />
             </TouchableOpacity>
-         </View>
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-            
-
             <TouchableOpacity
               onPress={() => {
                 if (type !== "expense") {
-                  Alert.alert("Thông báo", "Bạn cần lọc theo Chi Tiền để hiển thị biểu đồ.");
+                  Alert.alert(
+                    "Thông báo",
+                    "Bạn cần lọc theo Chi Tiền để hiển thị biểu đồ.",
+                  );
                 } else if (filteredTransactions.length === 0) {
                   Alert.alert(
                     "Thông báo",
@@ -1398,9 +1484,11 @@ const StatisticsScreen = () => {
               let label = "";
               if (p === "day") label = t("stats.today");
               else if (p === "month")
-                label = period === "month" ? getMonthBadgeLabel() : t("stats.month");
+                label =
+                  period === "month" ? getMonthBadgeLabel() : t("stats.month");
               else if (p === "year")
-                label = period === "year" ? getYearBadgeLabel() : t("stats.year");
+                label =
+                  period === "year" ? getYearBadgeLabel() : t("stats.year");
               else if (p === "custom") label = t("stats.custom");
               else if (p === "all") label = t("stats.all");
               return (
@@ -1544,7 +1632,6 @@ const StatisticsScreen = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
-
       </View>
 
       <FlatList
@@ -1571,22 +1658,36 @@ const StatisticsScreen = () => {
       />
 
       {type === "all" ? (
-        <View style={[styles.summaryContainer, { paddingBottom: bottomTabBarHeight + 12 }]}>
+        <View
+          style={[
+            styles.summaryContainer,
+            { paddingBottom: bottomTabBarHeight + 12 },
+          ]}
+        >
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabelBold}>{t("stats.totalIncome")}:</Text>
+            <Text style={styles.summaryLabelBold}>
+              {t("stats.totalIncome")}:
+            </Text>
             <Text style={styles.summaryIncome}>
               +{formatCurrency(totalIncome)} đ
             </Text>
           </View>
           <View style={[styles.summaryRow, { marginBottom: 0 }]}>
-            <Text style={styles.summaryLabelBold}>{t("stats.totalExpense")}:</Text>
+            <Text style={styles.summaryLabelBold}>
+              {t("stats.totalExpense")}:
+            </Text>
             <Text style={styles.summaryExpense}>
               -{formatCurrency(totalExpense)} đ
             </Text>
           </View>
         </View>
       ) : displayTotal !== null ? (
-        <View style={[styles.summaryContainer, { paddingBottom: bottomTabBarHeight + 12 }]}>
+        <View
+          style={[
+            styles.summaryContainer,
+            { paddingBottom: bottomTabBarHeight + 12 },
+          ]}
+        >
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabelBold}>{t("stats.total")}:</Text>
             <Text
@@ -1608,6 +1709,17 @@ const StatisticsScreen = () => {
           mode="date"
           display="default"
           onChange={handleDateChange}
+          accentColor="#5596e0ff"
+        />
+      )}
+
+      {showEditDatePicker && (
+        <DateTimePicker
+          value={editDate}
+          mode="date"
+          display="default"
+          maximumDate={new Date()}
+          onChange={handleExecuteEditDate}
           accentColor="#5596e0ff"
         />
       )}
@@ -1759,18 +1871,25 @@ const StatisticsScreen = () => {
             </View>
 
             {/* Thanh Tab chọn Ngày / Tháng / Năm */}
-            <View style={{
-              flexDirection: 'row',
-              backgroundColor: '#f1f5f9',
-              borderRadius: 0,
-              padding: 4,
-              marginHorizontal: 16,
-              marginTop: 12,
-              marginBottom: 8,
-            }}>
-              {(['day', 'month', 'year'] as const).map((tab) => {
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: "#f1f5f9",
+                borderRadius: 0,
+                padding: 4,
+                marginHorizontal: 16,
+                marginTop: 12,
+                marginBottom: 8,
+              }}
+            >
+              {(["day", "month", "year"] as const).map((tab) => {
                 const isActive = historyTab === tab;
-                const label = tab === 'day' ? t("stats.day") : tab === 'month' ? t("stats.month") : t("stats.year");
+                const label =
+                  tab === "day"
+                    ? t("stats.day")
+                    : tab === "month"
+                      ? t("stats.month")
+                      : t("stats.year");
                 return (
                   <TouchableOpacity
                     key={tab}
@@ -1778,21 +1897,23 @@ const StatisticsScreen = () => {
                     style={{
                       flex: 1,
                       paddingVertical: 10,
-                      alignItems: 'center',
+                      alignItems: "center",
                       borderRadius: 0,
-                      backgroundColor: isActive ? '#3b82f6' : 'transparent',
-                      shadowColor: isActive ? '#3b82f6' : 'transparent',
+                      backgroundColor: isActive ? "#3b82f6" : "transparent",
+                      shadowColor: isActive ? "#3b82f6" : "transparent",
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: isActive ? 0.2 : 0,
                       shadowRadius: 4,
                       elevation: isActive ? 2 : 0,
                     }}
                   >
-                    <Text style={{
-                      fontWeight: '700',
-                      color: isActive ? '#ffffff' : '#64748b',
-                      fontSize: 14,
-                    }}>
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        color: isActive ? "#ffffff" : "#64748b",
+                        fontSize: 14,
+                      }}
+                    >
                       {label}
                     </Text>
                   </TouchableOpacity>
@@ -1801,8 +1922,8 @@ const StatisticsScreen = () => {
             </View>
 
             {(() => {
-              const filteredHistory = notificationHistory.filter(item => {
-                const type = item.type || 'day';
+              const filteredHistory = notificationHistory.filter((item) => {
+                const type = item.type || "day";
                 return type === historyTab;
               });
 
@@ -1824,11 +1945,11 @@ const StatisticsScreen = () => {
                         fontWeight: "600",
                       }}
                     >
-                      {historyTab === 'day'
+                      {historyTab === "day"
                         ? "Chưa có báo cáo tài chính hàng ngày."
-                        : historyTab === 'month'
-                        ? "Chưa có báo cáo tài chính hàng tháng."
-                        : "Chưa có báo cáo tài chính hàng năm."}
+                        : historyTab === "month"
+                          ? "Chưa có báo cáo tài chính hàng tháng."
+                          : "Chưa có báo cáo tài chính hàng năm."}
                     </Text>
                     <Text
                       style={{
@@ -1838,33 +1959,32 @@ const StatisticsScreen = () => {
                         marginTop: 8,
                       }}
                     >
-                      {historyTab === 'day'
+                      {historyTab === "day"
                         ? "Báo cáo chi tiết hàng ngày sẽ tự động xuất hiện lúc 2:00 sáng và được lưu trữ tại đây!"
-                        : historyTab === 'month'
-                        ? "Báo cáo tổng hợp chi tiết hàng tháng sẽ tự động xuất hiện lúc 2:00 sáng ngày đầu tiên của tháng mới!"
-                        : "Báo cáo tổng hợp chi tiết hàng năm sẽ tự động xuất hiện lúc 2:00 sáng ngày đầu tiên của năm mới!"}
+                        : historyTab === "month"
+                          ? "Báo cáo tổng hợp chi tiết hàng tháng sẽ tự động xuất hiện lúc 2:00 sáng ngày đầu tiên của tháng mới!"
+                          : "Báo cáo tổng hợp chi tiết hàng năm sẽ tự động xuất hiện lúc 2:00 sáng ngày đầu tiên của năm mới!"}
                     </Text>
                   </View>
                 );
               }
 
-              const currentLimit = historyTab === 'day' 
-                ? historyDayLimit 
-                : historyTab === 'month' 
-                  ? historyMonthLimit 
-                  : historyYearLimit;
+              const currentLimit =
+                historyTab === "day"
+                  ? historyDayLimit
+                  : historyTab === "month"
+                    ? historyMonthLimit
+                    : historyYearLimit;
 
-              const setLimit = historyTab === 'day'
-                ? setHistoryDayLimit
-                : historyTab === 'month'
-                  ? setHistoryMonthLimit
-                  : setHistoryYearLimit;
+              const setLimit =
+                historyTab === "day"
+                  ? setHistoryDayLimit
+                  : historyTab === "month"
+                    ? setHistoryMonthLimit
+                    : setHistoryYearLimit;
 
-              const increment = historyTab === 'day'
-                ? 10
-                : historyTab === 'month'
-                  ? 3
-                  : 2;
+              const increment =
+                historyTab === "day" ? 10 : historyTab === "month" ? 3 : 2;
 
               return (
                 <FlatList
@@ -1938,10 +2058,10 @@ const StatisticsScreen = () => {
           <View style={styles.pieModalBox}>
             <View style={styles.modalHeader}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.modalTitle}>{t("stats.pieStructure")}</Text>
-            <Text style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
-              {t("stats.filterTime")}: {getFilterDateText()}
-            </Text>
+                <Text style={styles.modalTitle}>{t("stats.pieStructure")}</Text>
+                <Text style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+                  {t("stats.filterTime")}: {getFilterDateText()}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => {
@@ -1999,10 +2119,7 @@ const StatisticsScreen = () => {
                           categoryBudgets,
                         );
                         return (
-                          <View
-                            key={tx.id}
-                            style={styles.pieDetailTxCard}
-                          >
+                          <View key={tx.id} style={styles.pieDetailTxCard}>
                             <View style={styles.pieDetailTxLeft}>
                               <View style={styles.pieDetailIconWrapper}>
                                 <Image
@@ -2015,7 +2132,11 @@ const StatisticsScreen = () => {
                                   style={styles.pieDetailName}
                                   numberOfLines={1}
                                 >
-                                   {resolveCategoryName(tx, profile, categoryBudgets)}
+                                  {resolveCategoryName(
+                                    tx,
+                                    profile,
+                                    categoryBudgets,
+                                  )}
                                 </Text>
                                 {tx.note ? (
                                   <Text
@@ -2043,7 +2164,9 @@ const StatisticsScreen = () => {
                           onPress={() => setPieDetailLimit((prev) => prev + 10)}
                           activeOpacity={0.85}
                         >
-                          <Text style={styles.pieDetailLoadMoreTxt}>Tải thêm</Text>
+                          <Text style={styles.pieDetailLoadMoreTxt}>
+                            Tải thêm
+                          </Text>
                         </TouchableOpacity>
                       ) : null}
                     </View>
@@ -2077,7 +2200,10 @@ const StatisticsScreen = () => {
 
       {/* Modal Tùy chọn giao dịch (Sửa/Xóa) */}
       {(() => {
-        const isOldTx = selectedTxForAction ? (Date.now() - selectedTxForAction.timestamp > 3 * 24 * 60 * 60 * 1000) : false;
+        const isOldTx = selectedTxForAction
+          ? Date.now() - selectedTxForAction.timestamp >
+            45 * 24 * 60 * 60 * 1000
+          : false;
         return (
           <Modal
             visible={showOptionsModal}
@@ -2096,14 +2222,44 @@ const StatisticsScreen = () => {
                   onPress={handleEditPress}
                   disabled={isOldTx}
                 >
-                  <Text style={[styles.optionTextEdit, isOldTx && { color: "#dddddd" }]}>Sửa số tiền</Text>
+                  <Text
+                    style={[
+                      styles.optionTextEdit,
+                      isOldTx && { color: "#dddddd" },
+                    ]}
+                  >
+                    Sửa số tiền
+                  </Text>
                 </TouchableOpacity>
                 <View style={styles.optionDivider} />
                 <TouchableOpacity
                   style={styles.optionBtn}
                   onPress={handleEditNotePress}
+                  disabled={isOldTx}
                 >
-                  <Text style={styles.optionTextEdit}>Sửa ghi chú</Text>
+                  <Text
+                    style={[
+                      styles.optionTextEdit,
+                      isOldTx && { color: "#dddddd" },
+                    ]}
+                  >
+                    Sửa ghi chú
+                  </Text>
+                </TouchableOpacity>
+                <View style={styles.optionDivider} />
+                <TouchableOpacity
+                  style={styles.optionBtn}
+                  onPress={handleEditDatePress}
+                  disabled={isOldTx}
+                >
+                  <Text
+                    style={[
+                      styles.optionTextEdit,
+                      isOldTx && { color: "#dddddd" },
+                    ]}
+                  >
+                    Sửa thời gian
+                  </Text>
                 </TouchableOpacity>
                 <View style={styles.optionDivider} />
                 <TouchableOpacity
@@ -2114,7 +2270,14 @@ const StatisticsScreen = () => {
                   }}
                   disabled={isOldTx}
                 >
-                  <Text style={[styles.optionTextDelete, isOldTx && { color: "#dddddd" }]}>Xóa giao dịch</Text>
+                  <Text
+                    style={[
+                      styles.optionTextDelete,
+                      isOldTx && { color: "#dddddd" },
+                    ]}
+                  >
+                    Xóa giao dịch
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.optionCancelBtn}
