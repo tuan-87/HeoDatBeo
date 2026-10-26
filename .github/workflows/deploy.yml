@@ -51,3 +51,8 @@ jobs:
           eas build --platform android --profile production --non-interactive --auto-submit
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_HEODATBEO_TOKEN || secrets.EXPO_TOKEN }}
+
+      - name: 📝 Auto Update Google Play Release Notes from version_history.json
+        run: |
+          npm install --no-save google-auth-library
+          node update-release-notes.js
