@@ -1,5 +1,15 @@
 [
   {
+    "version": "26.10.2026",
+    "description": "- Thêm tính năng AI thông minh\n- Sửa lỗi hiển thị tên ở giao diện cài đặt",
+    "order": 32
+  },
+  {
+    "version": "26.09.2026",
+    "description": "- Cập nhật icon app",
+    "order": 31
+  },
+  {
     "version": "30.07.2026",
     "description": "- Cập nhật giao diện ngôn ngữ\n- Chỉnh sửa giao diện",
     "order": 30

@@ -36,6 +36,7 @@ import Keypad from "../components/Keypad";
 import { styles } from "../styles/FundScreen";
 import { Archive } from "lucide-react-native/icons";
 import { getStreakLevel, getStreakLevelInfo } from "../utils/streak";
+import { getMascotImage } from "../utils/mascot";
 
 const FUND_ICONS: Record<string, any> = {
   default: require("../../assets/fund_icon/default.png"),
@@ -68,7 +69,8 @@ const FundScreen = () => {
     if (hr < 5) return t("home.greeting.early") || "Chào sáng sớm 🌅";
     if (hr < 12) return t("home.greeting.morning") || "Xin chào buổi sáng ☀️";
     if (hr < 13) return t("home.greeting.noon") || "Xin chào buổi trưa 🌞";
-    if (hr < 18) return t("home.greeting.afternoon") || "Xin chào buổi chiều 🌤️";
+    if (hr < 18)
+      return t("home.greeting.afternoon") || "Xin chào buổi chiều 🌤️";
     if (hr < 22) return t("home.greeting.evening") || "Xin chào buổi tối 🌙";
     return t("home.greeting.night") || "Xin chào đêm khuya 🌃";
   };
@@ -147,7 +149,10 @@ const FundScreen = () => {
         f.name === trimmedNewName,
     );
     if (activeExists) {
-      Alert.alert(t("common.error"), t("deletedFunds.duplicateError", { name: trimmedNewName }));
+      Alert.alert(
+        t("common.error"),
+        t("deletedFunds.duplicateError", { name: trimmedNewName }),
+      );
       return;
     }
 
@@ -546,15 +551,16 @@ const FundScreen = () => {
     setAllocModalVisible(false);
     loadData();
 
-    const actionLabel = txType === "deposit" ? t("funds.deposit") : t("funds.withdraw");
+    const actionLabel =
+      txType === "deposit" ? t("funds.deposit") : t("funds.withdraw");
     const emoji = txType === "deposit" ? "✅" : "💸";
     Alert.alert(
       `${emoji} ${actionLabel} ${t("common.success").toLowerCase()}`,
-      `${actionLabel} ${formatCurrency(amount)} ${t("common.currencySymbol")} ${
+      `${
         txType === "deposit"
           ? `${t("funds.depositTo")} ${selectedFund.name}`
           : `${t("funds.withdrawFrom")} ${selectedFund.name}`
-      }.`,
+      }: ${formatCurrency(amount)} ${t("common.currencySymbol")}.`,
       [{ text: "OK", style: "default" }],
     );
   };
@@ -624,7 +630,7 @@ const FundScreen = () => {
       </View>
 
       <ScrollView
-          showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
         style={styles.body}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
@@ -713,7 +719,9 @@ const FundScreen = () => {
               </TouchableOpacity>
               <View style={styles.fundInfo}>
                 <Text style={styles.fundName}>{fund.name}</Text>
-                <Text style={styles.fundDesc}>{t("funds.tapToDepositWithdraw")}</Text>
+                <Text style={styles.fundDesc}>
+                  {t("funds.tapToDepositWithdraw")}
+                </Text>
               </View>
               <View style={styles.fundBalanceContainer}>
                 <Text style={styles.fundBalance}>
@@ -1045,7 +1053,9 @@ const FundScreen = () => {
         <View style={styles.modalOverlayCenter}>
           <View style={styles.iconModalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t("funds.selectIconTitle")}</Text>
+              <Text style={styles.modalTitle}>
+                {t("funds.selectIconTitle")}
+              </Text>
               <TouchableOpacity onPress={handleCancelIcon}>
                 <X color="#64748b" size={24} />
               </TouchableOpacity>

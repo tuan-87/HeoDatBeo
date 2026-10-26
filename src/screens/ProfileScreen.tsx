@@ -37,7 +37,11 @@ import {
 import { storage } from "../store/storage";
 import { UserProfile } from "../types";
 import { formatCurrency } from "../utils/format";
-import { getStreakLevel, getStreakLevelImage, getStreakLevelInfo } from "../utils/streak";
+import {
+  getStreakLevel,
+  getStreakLevelImage,
+  getStreakLevelInfo,
+} from "../utils/streak";
 import { MASCOT_LIST, getMascotImage } from "../utils/mascot";
 import { NAVY, styles } from "../styles/ProfileScreen";
 
@@ -60,12 +64,16 @@ const ProfileScreen = () => {
   const [joinDateDisplay, setJoinDateDisplay] = useState("");
   const [daysSinceJoin, setDaysSinceJoin] = useState<number | null>(null);
   const [isMascotModalVisible, setMascotModalVisible] = useState(false);
-  const [isMascotPreviewModalVisible, setIsMascotPreviewModalVisible] = useState(false);
-  const [qrModal, setQrModal] = useState<{ visible: boolean; url: string; label: string }>(
-    { visible: false, url: "", label: "" }
-  );
+  const [isMascotPreviewModalVisible, setIsMascotPreviewModalVisible] =
+    useState(false);
+  const [qrModal, setQrModal] = useState<{
+    visible: boolean;
+    url: string;
+    label: string;
+  }>({ visible: false, url: "", label: "" });
 
-  const activeMascot = MASCOT_LIST.find((m) => m.key === profile?.mascot) || MASCOT_LIST[0];
+  const activeMascot =
+    MASCOT_LIST.find((m) => m.key === profile?.mascot) || MASCOT_LIST[0];
 
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -96,14 +104,14 @@ const ProfileScreen = () => {
     if (profile.mascotLastChanged) {
       const now = Date.now();
       const daysSinceChange = Math.floor(
-        (now - profile.mascotLastChanged) / (1000 * 60 * 60 * 24)
+        (now - profile.mascotLastChanged) / (1000 * 60 * 60 * 24),
       );
       if (daysSinceChange < MASCOT_COOLDOWN_DAYS) {
         const daysLeft = MASCOT_COOLDOWN_DAYS - daysSinceChange;
         setMascotModalVisible(false);
         Alert.alert(
           "Chưa đến lúc đổi linh vật",
-          `Bạn vừa đổi linh vật ${daysSinceChange} ngày trước. Còn ${daysLeft} ngày nữa mới được đổi lại.`
+          `Bạn vừa đổi linh vật ${daysSinceChange} ngày trước. Còn ${daysLeft} ngày nữa mới được đổi lại.`,
         );
         return;
       }
@@ -260,7 +268,10 @@ const ProfileScreen = () => {
           }
         });
       } catch (e) {
-        console.error("Failed to load transactions for saving balance in ProfileScreen", e);
+        console.error(
+          "Failed to load transactions for saving balance in ProfileScreen",
+          e,
+        );
       }
 
       // Calculate custom funds total
@@ -389,41 +400,37 @@ const ProfileScreen = () => {
 
   const handleDeleteHistoryImage = async (uriToDelete: string) => {
     if (!profile) return;
-    Alert.alert(
-      t("common.warning"),
-      t("profile.confirmDeleteAvatar"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.delete"),
-          style: "destructive",
-          onPress: async () => {
-            if (uriToDelete.startsWith("file://")) {
-              try {
-                await deleteAsync(uriToDelete, { idempotent: true });
-              } catch (err) {
-                console.log("Error deleting history image file:", err);
-              }
+    Alert.alert(t("common.warning"), t("profile.confirmDeleteAvatar"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          if (uriToDelete.startsWith("file://")) {
+            try {
+              await deleteAsync(uriToDelete, { idempotent: true });
+            } catch (err) {
+              console.log("Error deleting history image file:", err);
             }
-            const updatedHistory = (profile.avatarHistory || []).filter(
-              (uri) => uri !== uriToDelete,
-            );
-            const updatedProfile = {
-              ...profile,
-              avatarHistory: updatedHistory,
-            };
-            if (editAvatar === uriToDelete) {
-              setEditAvatar(profile.avatar || "");
-            }
-            const success = await storage.saveUserProfile(updatedProfile);
-            if (success) {
-              setProfile(updatedProfile);
-            }
-            setPreviewImageUri(null);
-          },
+          }
+          const updatedHistory = (profile.avatarHistory || []).filter(
+            (uri) => uri !== uriToDelete,
+          );
+          const updatedProfile = {
+            ...profile,
+            avatarHistory: updatedHistory,
+          };
+          if (editAvatar === uriToDelete) {
+            setEditAvatar(profile.avatar || "");
+          }
+          const success = await storage.saveUserProfile(updatedProfile);
+          if (success) {
+            setProfile(updatedProfile);
+          }
+          setPreviewImageUri(null);
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const hasSocial =
@@ -476,10 +483,14 @@ const ProfileScreen = () => {
           </View>
 
           {/* Name & bio */}
-          <Text style={styles.heroName} numberOfLines={1} ellipsizeMode="tail">{profile?.name || "—"}</Text>
+          <Text style={styles.heroName} numberOfLines={1} ellipsizeMode="tail">
+            {profile?.name || "—"}
+          </Text>
           {profile?.nickname ? (
             <Text style={styles.heroNickname}>@{profile.nickname}</Text>
-          ) : <Text style={styles.heroNickname}>@nickname</Text>}
+          ) : (
+            <Text style={styles.heroNickname}>@nickname</Text>
+          )}
           {profile?.bio ? (
             <Text style={styles.heroBio}>{profile.bio}</Text>
           ) : (
@@ -490,7 +501,9 @@ const ProfileScreen = () => {
           {daysSinceJoin !== null ? (
             <View style={styles.daysBadge}>
               <Text style={styles.daysBadgeText}>
-                {t("profile.daysBadge", { days: daysSinceJoin.toLocaleString("vi-VN") })}
+                {t("profile.daysBadge", {
+                  days: daysSinceJoin.toLocaleString("vi-VN"),
+                })}
               </Text>
             </View>
           ) : null}
@@ -512,7 +525,9 @@ const ProfileScreen = () => {
 
           {/* Total Assets Card */}
           <View style={styles.totalAssetsCard}>
-            <Text style={styles.totalAssetsLabel}>{t("profile.totalAssets")}</Text>
+            <Text style={styles.totalAssetsLabel}>
+              {t("profile.totalAssets")}
+            </Text>
             <Text style={styles.totalAssetsValue}>
               {formatCurrency(totalBalance)} {t("common.currencySymbol")}
             </Text>
@@ -523,82 +538,91 @@ const ProfileScreen = () => {
             <View style={styles.socialStrip}>
               {profile?.facebook ? (
                 <TouchableOpacity
-                  onPress={() => setQrModal({ visible: true, url: profile.facebook!, label: "Facebook" })}
+                  onPress={() =>
+                    setQrModal({
+                      visible: true,
+                      url: profile.facebook!,
+                      label: "Facebook",
+                    })
+                  }
                   activeOpacity={0.75}
                 >
-                  <Image source={SOCIAL_ICONS.facebook} style={styles.socialIcon} />
+                  <Image
+                    source={SOCIAL_ICONS.facebook}
+                    style={styles.socialIcon}
+                  />
                 </TouchableOpacity>
               ) : null}
               {profile?.instagram ? (
                 <TouchableOpacity
-                  onPress={() => setQrModal({ visible: true, url: profile.instagram!, label: "Instagram" })}
+                  onPress={() =>
+                    setQrModal({
+                      visible: true,
+                      url: profile.instagram!,
+                      label: "Instagram",
+                    })
+                  }
                   activeOpacity={0.75}
                 >
-                  <Image source={SOCIAL_ICONS.instagram} style={styles.socialIcon} />
+                  <Image
+                    source={SOCIAL_ICONS.instagram}
+                    style={styles.socialIcon}
+                  />
                 </TouchableOpacity>
               ) : null}
               {profile?.tiktok ? (
                 <TouchableOpacity
-                  onPress={() => setQrModal({ visible: true, url: profile.tiktok!, label: "TikTok" })}
+                  onPress={() =>
+                    setQrModal({
+                      visible: true,
+                      url: profile.tiktok!,
+                      label: "TikTok",
+                    })
+                  }
                   activeOpacity={0.75}
                 >
-                  <Image source={SOCIAL_ICONS.tiktok} style={styles.socialIcon} />
+                  <Image
+                    source={SOCIAL_ICONS.tiktok}
+                    style={styles.socialIcon}
+                  />
                 </TouchableOpacity>
               ) : null}
               {profile?.youtube ? (
                 <TouchableOpacity
-                  onPress={() => setQrModal({ visible: true, url: profile.youtube!, label: "YouTube" })}
+                  onPress={() =>
+                    setQrModal({
+                      visible: true,
+                      url: profile.youtube!,
+                      label: "YouTube",
+                    })
+                  }
                   activeOpacity={0.75}
                 >
-                  <Image source={SOCIAL_ICONS.youtube} style={styles.socialIcon} />
+                  <Image
+                    source={SOCIAL_ICONS.youtube}
+                    style={styles.socialIcon}
+                  />
                 </TouchableOpacity>
               ) : null}
               {profile?.thread ? (
                 <TouchableOpacity
-                  onPress={() => setQrModal({ visible: true, url: profile.thread!, label: "Threads" })}
+                  onPress={() =>
+                    setQrModal({
+                      visible: true,
+                      url: profile.thread!,
+                      label: "Threads",
+                    })
+                  }
                   activeOpacity={0.75}
                 >
-                  <Image source={SOCIAL_ICONS.thread} style={styles.socialIcon} />
+                  <Image
+                    source={SOCIAL_ICONS.thread}
+                    style={styles.socialIcon}
+                  />
                 </TouchableOpacity>
               ) : null}
             </View>
           ) : null}
-        </View>
-
-        {/* ── Mascot Card (Linh vật đồng hành) ── */}
-        <View style={styles.mascotCardSection}>
-          <View style={styles.mascotCardHeader}>
-            <View style={styles.mascotTitleGroup}>
-              <Text style={styles.mascotCardTitle}>🐾 {t("profile.companionMascot")}</Text>
-            </View>
-          </View>
-
-          <View style={styles.mascotCardBody}>
-            <TouchableOpacity
-              onPress={() => setIsMascotPreviewModalVisible(true)}
-              activeOpacity={0.85}
-              style={styles.mascotImgContainer}
-            >
-              <Image
-                source={getMascotImage(profile?.mascot)}
-                style={styles.mascotMainImg}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-            <View style={styles.mascotInfoContainer}>
-              <View style={styles.mascotNameRow}>
-                <Text style={styles.mascotMainName}>{activeMascot.name}</Text>
-                <View style={styles.activeTag}>
-                  <Text style={styles.activeTagTxt}>{t("profile.currentlyUsed")}</Text>
-                </View>
-              </View>
-              <Text style={styles.mascotDescTxt}>
-                {profile?.mascotLastChanged
-                  ? t("profile.lastChanged", { date: formatDateVN(new Date(profile.mascotLastChanged)) })
-                  : t("profile.defaultCompanionDesc")}
-              </Text>
-            </View>
-          </View>
         </View>
 
         {/* ── Streak Card (Hành trình giữ chuỗi) ── */}
@@ -611,7 +635,12 @@ const ProfileScreen = () => {
               onPressOut={handlePressOut}
               activeOpacity={0.9}
             >
-              <Animated.View style={[styles.changeMascotHeaderBtn, { transform: [{ scale: scaleAnim }] }]}>
+              <Animated.View
+                style={[
+                  styles.changeMascotHeaderBtn,
+                  { transform: [{ scale: scaleAnim }] },
+                ]}
+              >
                 <Text style={styles.changeMascotHeaderEmoji}>🐾</Text>
               </Animated.View>
             </TouchableOpacity>
@@ -624,13 +653,19 @@ const ProfileScreen = () => {
               )}
               style={styles.streakBigImage}
             />
-            
+
             <Text style={styles.streakLevelNameTxt}>
-              {getStreakLevelInfo(getStreakLevel(profile?.streakCount || 0), t).name}
+              {
+                getStreakLevelInfo(getStreakLevel(profile?.streakCount || 0), t)
+                  .name
+              }
             </Text>
-            
+
             <Text style={styles.streakLevelDescriptionTxt}>
-              {getStreakLevelInfo(getStreakLevel(profile?.streakCount || 0), t).description}
+              {
+                getStreakLevelInfo(getStreakLevel(profile?.streakCount || 0), t)
+                  .description
+              }
             </Text>
 
             <Text style={styles.streakDaysTxt}>
@@ -639,35 +674,36 @@ const ProfileScreen = () => {
           </View>
 
           {/* Progress Bar */}
-          {getStreakLevel(profile?.streakCount || 0) < 18 && (() => {
-            const pct = Math.min(100, Math.max(0, (((profile?.streakCount || 0) % 30) / 30) * 100));
-            return (
-              <View style={styles.progressBarWrapper}>
-                {/* Track (overflow hidden để clip fill) */}
-                <View style={styles.progressBarBg}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${pct}%` },
-                    ]}
-                  />
+          {getStreakLevel(profile?.streakCount || 0) < 18 &&
+            (() => {
+              const pct = Math.min(
+                100,
+                Math.max(0, (((profile?.streakCount || 0) % 30) / 30) * 100),
+              );
+              return (
+                <View style={styles.progressBarWrapper}>
+                  {/* Track (overflow hidden để clip fill) */}
+                  <View style={styles.progressBarBg}>
+                    <View
+                      style={[styles.progressBarFill, { width: `${pct}%` }]}
+                    />
+                  </View>
+                  {/* Fire gif ở đầu fill, nằm ngoài track để hiện toàn bộ */}
+                  {pct > 0 && (
+                    <Image
+                      source={require("../../assets/series/gif/fire_progress.gif")}
+                      style={[
+                        styles.fireGif,
+                        { left: `${pct}%`, transform: [{ translateX: -14 }] },
+                      ]}
+                    />
+                  )}
                 </View>
-                {/* Fire gif ở đầu fill, nằm ngoài track để hiện toàn bộ */}
-                {pct > 0 && (
-                  <Image
-                    source={require("../../assets/series/gif/fire_progress.gif")}
-                    style={[
-                      styles.fireGif,
-                      { left: `${pct}%`, transform: [{ translateX: -14 }] },
-                    ]}
-                  />
-                )}
-              </View>
-            );
-          })()}
+              );
+            })()}
 
           <Text style={styles.streakRecoveryLimitTxt}>
-          Mỗi tháng sẽ có 3 lượt khôi phục chuỗi
+            Mỗi tháng sẽ có 3 lượt khôi phục chuỗi
           </Text>
         </View>
 
@@ -688,7 +724,9 @@ const ProfileScreen = () => {
                   <User color="#0891b2" size={16} />
                 </View>
                 <View style={styles.infoTexts}>
-                  <Text style={styles.infoLabel}>{t("profile.genderLabel")}</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.genderLabel")}
+                  </Text>
                   <Text style={styles.infoValue}>{profile.gender}</Text>
                 </View>
               </View>
@@ -702,7 +740,9 @@ const ProfileScreen = () => {
                   <Calendar color="#7c3aed" size={16} />
                 </View>
                 <View style={styles.infoTexts}>
-                  <Text style={styles.infoLabel}>{t("profile.birthdayLabel")}</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.birthdayLabel")}
+                  </Text>
                   <Text style={styles.infoValue}>{profile.birthday}</Text>
                 </View>
               </View>
@@ -730,7 +770,9 @@ const ProfileScreen = () => {
                   <GraduationCap color="#16a34a" size={16} />
                 </View>
                 <View style={styles.infoTexts}>
-                  <Text style={styles.infoLabel}>{t("profile.educationLabel")}</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.educationLabel")}
+                  </Text>
                   <Text style={styles.infoValue}>{profile.education}</Text>
                 </View>
               </View>
@@ -744,7 +786,9 @@ const ProfileScreen = () => {
                   <Heart color="#e11d48" size={16} />
                 </View>
                 <View style={styles.infoTexts}>
-                  <Text style={styles.infoLabel}>{t("profile.hobbyLabel")}</Text>
+                  <Text style={styles.infoLabel}>
+                    {t("profile.hobbyLabel")}
+                  </Text>
                   <Text style={styles.infoValue}>{profile.hobby}</Text>
                 </View>
               </View>
@@ -871,7 +915,9 @@ const ProfileScreen = () => {
                 />
               </View>
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>{t("profile.editNickname")}</Text>
+                <Text style={styles.fieldLabel}>
+                  {t("profile.editNickname")}
+                </Text>
                 <TextInput
                   style={styles.fieldInput}
                   placeholder={t("profile.placeholderNickname")}
@@ -895,7 +941,9 @@ const ProfileScreen = () => {
 
               {/* Giới tính + Ngày sinh */}
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>{t("profile.genderLabel")}</Text>
+                <Text style={styles.fieldLabel}>
+                  {t("profile.genderLabel")}
+                </Text>
                 <View style={styles.genderRow}>
                   {[
                     { key: "Nam", label: t("profile.genderMale") },
@@ -926,7 +974,9 @@ const ProfileScreen = () => {
               <View style={styles.rowPair}>
                 {/* Ngày sinh — date picker */}
                 <View style={[styles.field, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>{t("profile.birthdayLabel")}</Text>
+                  <Text style={styles.fieldLabel}>
+                    {t("profile.birthdayLabel")}
+                  </Text>
                   <TouchableOpacity
                     style={styles.datePickerBtn}
                     onPress={() => setShowDatePicker(true)}
@@ -967,7 +1017,9 @@ const ProfileScreen = () => {
 
                 {/* Ngày tham gia — read-only */}
                 <View style={[styles.field, { flex: 1 }]}>
-                  <Text style={styles.fieldLabel}>{t("profile.joinedFrom")}</Text>
+                  <Text style={styles.fieldLabel}>
+                    {t("profile.joinedFrom")}
+                  </Text>
                   <View style={styles.readonlyField}>
                     <Lock color="#94a3b8" size={14} />
                     <Text style={styles.readonlyTxt}>
@@ -981,7 +1033,9 @@ const ProfileScreen = () => {
               </View>
 
               {/* Group 2 */}
-              <Text style={styles.groupLabel}>{t("profile.workAndEducation")}</Text>
+              <Text style={styles.groupLabel}>
+                {t("profile.workAndEducation")}
+              </Text>
 
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>{t("profile.jobLabel")}</Text>
@@ -994,7 +1048,9 @@ const ProfileScreen = () => {
                 />
               </View>
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>{t("profile.educationLabel")}</Text>
+                <Text style={styles.fieldLabel}>
+                  {t("profile.educationLabel")}
+                </Text>
                 <TextInput
                   style={styles.fieldInput}
                   placeholder={t("profile.educationPlaceholder")}
@@ -1126,7 +1182,9 @@ const ProfileScreen = () => {
                   }
                 }}
               >
-                <Text style={styles.previewActionTxt}>{t("profile.deleteThisPhoto")}</Text>
+                <Text style={styles.previewActionTxt}>
+                  {t("profile.deleteThisPhoto")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1138,7 +1196,9 @@ const ProfileScreen = () => {
         visible={qrModal.visible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setQrModal({ visible: false, url: "", label: "" })}
+        onRequestClose={() =>
+          setQrModal({ visible: false, url: "", label: "" })
+        }
       >
         <TouchableOpacity
           style={{
@@ -1259,7 +1319,12 @@ const ProfileScreen = () => {
 
             <Image
               source={getMascotImage(profile?.mascot)}
-              style={{ width: 280, height: 280, resizeMode: "contain", marginVertical: 12 }}
+              style={{
+                width: 280,
+                height: 280,
+                resizeMode: "contain",
+                marginVertical: 12,
+              }}
             />
 
             <Text
@@ -1289,13 +1354,18 @@ const ProfileScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.mascotModalContent}>
             <View style={styles.mascotModalHeader}>
-              <Text style={styles.mascotModalTitle}>Chọn linh vật đồng hành</Text>
+              <Text style={styles.mascotModalTitle}>
+                Chọn linh vật đồng hành
+              </Text>
               <TouchableOpacity onPress={() => setMascotModalVisible(false)}>
                 <X color="#334155" size={24} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.mascotGrid} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              contentContainerStyle={styles.mascotGrid}
+              showsVerticalScrollIndicator={false}
+            >
               {MASCOT_LIST.map((mascot) => {
                 const isSelected = (profile?.mascot || "adagio") === mascot.key;
                 return (
@@ -1320,9 +1390,25 @@ const ProfileScreen = () => {
                     >
                       {mascot.name}
                     </Text>
+                    {mascot.personality ? (
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: isSelected ? "#4f46e5" : "#64748b",
+                          textAlign: "center",
+                          marginTop: 2,
+                          lineHeight: 14,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {mascot.personality}
+                      </Text>
+                    ) : null}
                     {isSelected && (
                       <View style={styles.activeIndicatorBadge}>
-                        <Text style={styles.activeIndicatorText}>Đang dùng</Text>
+                        <Text style={styles.activeIndicatorText}>
+                          Đang dùng
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>

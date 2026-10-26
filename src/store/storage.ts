@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Transaction, UserProfile, CategoryBudget, TransactionDateIndex, NotificationHistoryItem, GoldItem, GoldSaleRecord } from '../types';
+import { Transaction, UserProfile, CategoryBudget, TransactionDateIndex, NotificationHistoryItem, GoldItem, GoldSaleRecord, AIChatItem } from '../types';
 import { Paths } from 'expo-file-system';
 import { readAsStringAsync, writeAsStringAsync } from 'expo-file-system/legacy';
 import { isCategoryIdMatch } from '../utils/category';
@@ -11,6 +11,8 @@ const TRANSACTION_DATE_INDEX_KEY = '@transaction_date_index';
 const NOTIFICATION_HISTORY_KEY = '@notificationHistory';
 const GOLD_ITEMS_KEY = '@goldItems';
 const GOLD_SALES_KEY = '@goldSales';
+const AI_CHAT_HISTORY_KEY = '@ai_chat_history';
+const USER_GEMINI_KEY = '@user_gemini_api_key';
 
 const ENCRYPTION_PREFIX = 'HDB_ENC_';
 const XOR_KEY = 87; // QuocTuanIT87 / SatsBoy87
@@ -616,6 +618,86 @@ export const storage = {
       return true;
     } catch (e) {
       console.error('Error deleting gold sale', e);
+      return false;
+    }
+  },
+
+  // AI Chat History (Tối đa 15 đoạn chat)
+  async getAIChatHistory(): Promise<AIChatItem[]> {
+    try {
+      const data = await getStorageItem(AI_CHAT_HISTORY_KEY);
+      if (!data) return [];
+      return JSON.parse(data);
+    } catch (e) {
+      console.error('Error reading AI chat history', e);
+      return [];
+    }
+  },
+
+  async saveAIChatHistory(history: AIChatItem[]): Promise<boolean> {
+    try {
+      // Giữ tối đa 15 đoạn chat
+      const limited = history.slice(0, 15);
+      await setStorageItem(AI_CHAT_HISTORY_KEY, JSON.stringify(limited));
+      return true;
+    } catch (e) {
+      console.error('Error saving AI chat history', e);
+      return false;
+    }
+  },
+
+  async addAIChatItem(item: AIChatItem): Promise<{ success: boolean; isFull?: boolean }> {
+    try {
+      const current = await this.getAIChatHistory();
+      if (current.length >= 15) {
+        return { success: false, isFull: true };
+      }
+      const updated = [item, ...current];
+      await this.saveAIChatHistory(updated);
+      return { success: true };
+    } catch (e) {
+      console.error('Error adding AI chat item', e);
+      return { success: false };
+    }
+  },
+
+  async deleteAIChatItem(id: string): Promise<boolean> {
+    try {
+      const current = await this.getAIChatHistory();
+      const updated = current.filter((item) => item.id !== id);
+      await this.saveAIChatHistory(updated);
+      return true;
+    } catch (e) {
+      console.error('Error deleting AI chat item', e);
+      return false;
+    }
+  },
+
+  async clearAIChatHistory(): Promise<boolean> {
+    try {
+      await setStorageItem(AI_CHAT_HISTORY_KEY, JSON.stringify([]));
+      return true;
+    } catch (e) {
+      console.error('Error clearing AI chat history', e);
+      return false;
+    }
+  },
+
+  // Gemini Custom API Key (nếu người dùng tự nhập)
+  async getUserGeminiApiKey(): Promise<string> {
+    try {
+      const key = await getStorageItem(USER_GEMINI_KEY);
+      return key || '';
+    } catch (e) {
+      return '';
+    }
+  },
+
+  async saveUserGeminiApiKey(key: string): Promise<boolean> {
+    try {
+      await setStorageItem(USER_GEMINI_KEY, key.trim());
+      return true;
+    } catch (e) {
       return false;
     }
   }

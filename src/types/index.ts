@@ -135,3 +135,14 @@ export interface GoldSaleRecord {
   soldItems?: SoldItemSnapshot[]; // Chi tiết các miếng vàng đã bán tại thời điểm bán
 }
 
+export type AIPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
+
+export interface AIChatItem {
+  id: string;
+  period: AIPeriod;
+  periodLabel: string;
+  question: string;
+  answer: string;
+  timestamp: number;
+}
+

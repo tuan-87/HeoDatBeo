@@ -81,6 +81,8 @@ export const de = {
     transferTitle: "Zuweisen an \"{name}\"",
     deposit: "Geld hinzufügen",
     withdraw: "Geld abheben",
+    depositTo: "Einzahlen in",
+    withdrawFrom: "Abheben von",
     confirmDeposit: "Einzahlung bestätigen",
     confirmWithdraw: "Auszahlung bestätigen",
     deleteTitle: "Löschen des Fonds bestätigen",

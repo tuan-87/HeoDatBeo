@@ -21,4 +21,5 @@ export type RootStackParamList = {
   DeletedCategories: undefined;
   DeletedFunds: undefined;
   YearlyReport: undefined;
+  AIAssistant: { initialPeriod?: 'day' | 'week' | 'month' | 'year' | 'all' } | undefined;
 };

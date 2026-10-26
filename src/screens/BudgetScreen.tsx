@@ -36,6 +36,8 @@ import { Archive } from "lucide-react-native/icons";
 import { useLanguage } from "../i18n/LanguageContext";
 import { getStreakLevel, getStreakLevelInfo } from "../utils/streak";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getMascotImage } from "../utils/mascot";
+import FloatingMascotAI from "../components/FloatingMascotAI";
 
 export const EXPENSE_ICONS: Record<string, any> = {
   badminton: require("../../assets/expense_icon/badminton.png"),
@@ -859,6 +861,14 @@ const txs = await storage.getTransactions();
           </View>
         </View>
       </Modal>
+
+      {/* Linh vật nổi di chuyển tự do */}
+      <FloatingMascotAI
+        mascot={profile?.mascot}
+        onPress={() =>
+          navigation.navigate("AIAssistant", { initialPeriod: "month" })
+        }
+      />
     </View>
   );
 };
