@@ -314,3 +314,144 @@ ${langInstruction}
 
   throw new Error(lastError || 'Không thể kết nối đến máy chủ Gemini AI.');
 }
+
+
+export interface VoiceParsedTransaction {
+  type: 'expense' | 'income';
+  amount: number;
+  categoryId?: string | null;
+  categoryName?: string;
+  note?: string;
+  daysAgo?: number;
+}
+
+export async function parseTransactionsFromVoice(
+  base64Audio: string,
+  mimeType: string,
+  categories: { id: string; name: string; type?: 'income' | 'expense' }[]
+): Promise<VoiceParsedTransaction[]> {
+  const apiKey = await getGeminiApiKey();
+
+  if (!apiKey) {
+    throw new Error('NO_API_KEY');
+  }
+
+  const expenseCats = categories
+    .filter((c) => c.type !== 'income')
+    .map((c) => `- ID: "${c.id}", Tên: "${c.name}"`)
+    .join('\n');
+
+  const incomeCats = categories
+    .filter((c) => c.type === 'income')
+    .map((c) => `- ID: "${c.id}", Tên: "${c.name}"`)
+    .join('\n');
+
+  const systemInstruction = `
+Bạn là trợ lý tài chính thông minh của ứng dụng Heo Đất Béo.
+Nhiệm vụ của bạn: Hãy lắng nghe đoạn ghi âm giọng nói của người dùng tiếng Việt và bóc tách thành danh sách các giao dịch thu chi tài chính.
+
+DANH MỤC CHI TIÊU HIỆN CÓ CỦA NGƯỜI DÙNG:
+${expenseCats || '(Chưa có danh mục cụ thể)'}
+
+DANH MỤC THU NHẬP HIỆN CÓ CỦA NGƯỜI DÙNG:
+${incomeCats || '(Chưa có danh mục cụ thể)'}
+
+QUY TẮC BÓC TÁCH BẮT BUỘC:
+1. Xác định số tiền (amount) thành số nguyên (VND):
+   - "k", "nghìn", "ngàn", "cành" = nhân 1.000 (Ví dụ: "45 cành" -> 45000, "50k" -> 50000).
+   - "xị", "lít" = nhân 100.000 (Ví dụ: "2 xị" -> 200000, "nửa lít" -> 50000).
+   - "củ", "triệu", "chai" = nhân 1.000.000 (Ví dụ: "1 củ" -> 1000000, "nửa củ" -> 500000).
+2. Xác định loại giao dịch (type): "expense" (chi tiêu) hoặc "income" (thu tiền). Mặc định là "expense" trừ khi nói về nhận tiền, lương, thưởng, bán hàng, được cho, trúng số...
+3. Khớp danh mục (categoryId, categoryName): Chọn danh mục phù hợp nhất từ danh sách trên. Nếu khớp, điền chính xác categoryId và categoryName. Nếu không khớp danh mục nào, để categoryId = null và đặt categoryName ngắn gọn (ví dụ "Khác" hoặc tên phù hợp).
+4. Ghi chú (note): Tóm tắt ngắn gọn nội dung chi/thu (ví dụ: "Ăn bún bò", "Đổ xăng", "Mua sắm quần áo", "Uống cà phê").
+5. Thời gian (daysAgo):
+   - "hôm qua", "tối qua" -> daysAgo: 1
+   - "hôm kia" -> daysAgo: 2
+   - Mặc định là 0 (hôm nay).
+6. Nếu người dùng nói nhiều khoản trong một câu (ví dụ: "Ăn phở 40k và uống trà đá 10k"), hãy tách thành từng giao dịch riêng biệt trong mảng kết quả.
+7. Nếu trong audio KHÔNG có giọng nói hoặc KHÔNG có giao dịch tài chính nào (chỉ là tiếng thở, tiếng ồn, hoặc câu hỏi chung), hãy trả về mảng rỗng: []
+
+ĐỊNH DẠNG KẾT QUẢ:
+Chỉ trả về DUY NHẤT một JSON array chuẩn cú pháp, KHÔNG kèm giải thích, KHÔNG bọc trong markdown:
+[
+  {
+    "type": "expense",
+    "amount": 45000,
+    "categoryId": "...",
+    "categoryName": "Ăn uống",
+    "note": "Ăn bún bò",
+    "daysAgo": 0
+  }
+]
+  `.trim();
+
+  const requestBody = {
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            text: systemInstruction,
+          },
+          {
+            inlineData: {
+              mimeType: mimeType || 'audio/mp4',
+              data: base64Audio,
+            },
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+    },
+  };
+
+  const modelsToTry = [
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+  ];
+
+  let lastError = '';
+
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleaned);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+          if (parsed && typeof parsed === 'object' && parsed.amount) {
+            return [parsed];
+          }
+          return [];
+        }
+      } else {
+        const errText = await response.text();
+        console.warn(`Voice parse model ${model} failed with status ${response.status}:`, errText);
+        lastError = `HTTP ${response.status}: ${errText}`;
+      }
+    } catch (e: any) {
+      console.warn(`Voice parse call failed for ${model}:`, e);
+      lastError = e?.message || 'Network error';
+    }
+  }
+
+  throw new Error(lastError || 'Không thể kết nối đến máy chủ AI để xử lý giọng nói.');
+}

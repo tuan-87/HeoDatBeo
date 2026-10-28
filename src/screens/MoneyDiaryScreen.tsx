@@ -13,12 +13,17 @@ import {
 } from "react-native";
 import { Alert } from "../components/CustomAlert";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import LinearGradient from 'react-native-linear-gradient';
+import { VoiceRecordingModal } from '../components/VoiceRecordingModal';
+import { getGeminiApiKey } from '../services/gemini.service';
 import {
   X,
   ArrowUpCircle,
   ArrowDownCircle,
   ChevronRight,
   RotateCcw,
+  Mic,
+  Sparkles,
 } from "lucide-react-native";
 import { storage } from "../store/storage";
 import { Transaction, UserProfile, CategoryBudget } from "../types";
@@ -193,6 +198,7 @@ const MoneyDiaryScreen = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [budgets, setBudgets] = useState<CategoryBudget[]>([]);
   const [streakModalVisible, setStreakModalVisible] = useState(false);
+  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [streakModalData, setStreakModalData] = useState<{
     count: number;
     status: StreakStatus;
@@ -373,8 +379,12 @@ const MoneyDiaryScreen = () => {
     note: string,
     transactionDate: Date,
     customLabel?: string,
+    customAmount?: number,
+    customType?: 'income' | 'expense',
+    silent?: boolean,
   ) => {
-    const amountToSave = amount;
+    const amountToSave = customAmount !== undefined ? customAmount : amount;
+    const txType = customType || type;
     let finalNote = note.trim() || undefined;
     if (customLabel) {
       finalNote = finalNote ? `${customLabel}: ${finalNote}` : customLabel;
@@ -383,7 +393,7 @@ const MoneyDiaryScreen = () => {
     let nextProfile = profile ? { ...profile } : null;
     if (!nextProfile) return;
 
-    if (type === "expense") {
+    if (txType === "expense") {
       const allBudgets = await storage.getCategoryBudgets();
       const catBudget = allBudgets.find(
         (b) =>
@@ -497,15 +507,15 @@ const MoneyDiaryScreen = () => {
     await storage.saveUserProfile(nextProfile);
 
     if (finalNote) {
-      await storage.addSuggestedNote(type, finalNote);
+      await storage.addSuggestedNote(txType, finalNote);
     }
 
     const newTx: Transaction = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-      type: type,
+      type: txType,
       amount: amountToSave,
       categoryId: customLabel
-        ? type === "income"
+        ? txType === "income"
           ? "income_khac"
           : "expense_khac"
         : chosenCategoryId,
@@ -514,17 +524,60 @@ const MoneyDiaryScreen = () => {
     };
     await storage.saveTransaction(newTx);
 
-    if (type === "expense") {
-      Alert.alert(t("common.success"), "Đã lưu khoản chi.");
-    } else {
-      Alert.alert(
-        t("common.success"),
-        'Đã lưu khoản thu. Vào màn hình "Chi Tiêu" để phân bổ.',
-      );
+    if (!silent) {
+      if (txType === "expense") {
+        Alert.alert(t("common.success"), "Đã lưu khoản chi.");
+      } else {
+        Alert.alert(
+          t("common.success"),
+          'Đã lưu khoản thu. Vào màn hình "Chi Tiêu" để phân bổ.',
+        );
+      }
     }
 
     setAmount(0);
     loadData();
+  };
+
+  const handleOpenVoiceModal = async () => {
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) {
+      Alert.alert("Thông báo", "Chức năng này đang được nâng cấp");
+      return;
+    }
+    setVoiceModalVisible(true);
+  };
+
+  const handleSaveVoiceTransactions = async (
+    items: {
+      type: 'expense' | 'income';
+      amount: number;
+      categoryId: string;
+      categoryName: string;
+      note: string;
+      timestamp: number;
+    }[]
+  ) => {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      await performSave(
+        item.categoryId,
+        item.categoryName,
+        item.note,
+        new Date(item.timestamp),
+        undefined,
+        item.amount,
+        item.type,
+        true
+      );
+    }
+
+    Alert.alert(
+      t("common.success"),
+      items.length > 1
+        ? `Đã lưu thành công ${items.length} giao dịch từ giọng nói!`
+        : `Đã lưu giao dịch ${items[0]?.note ? `"${items[0].note}"` : ""} thành công!`
+    );
   };
 
   const rawIncomeCategories = (
@@ -633,6 +686,24 @@ const MoneyDiaryScreen = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Nút Ghi chép bằng Giọng nói */}
+            <TouchableOpacity
+              style={styles.voiceRecordButton}
+              activeOpacity={0.8}
+              onPress={handleOpenVoiceModal}
+            >
+              <LinearGradient
+                colors={["#4338ca", "#3b82f6"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.voiceRecordGradient}
+              >
+                <Mic color="#ffffff" size={17} />
+                <Text style={styles.voiceRecordText}>Ghi chép bằng giọng nói</Text>
+                <Sparkles color="#fbbf24" size={15} />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
           {profile?.inputMethod === "manual" ? (
@@ -1102,6 +1173,16 @@ const MoneyDiaryScreen = () => {
           </View>
         </View>
       </Modal>
+      {/* Modal Ghi âm giọng nói */}
+      <VoiceRecordingModal
+        visible={voiceModalVisible}
+        onClose={() => setVoiceModalVisible(false)}
+        categories={[
+          ...expenseCategories.map((c) => ({ id: c.id, name: c.name, type: 'expense' as const })),
+          ...incomeCategories.map((c) => ({ id: c.id, name: c.name, type: 'income' as const })),
+        ]}
+        onSaveTransactions={handleSaveVoiceTransactions}
+      />
     </View>
   );
 };

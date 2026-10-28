@@ -21,7 +21,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.satsboy87.heodatbeo",
-      "versionCode": 32
+      "versionCode": 32,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/savepig.jpg"
@@ -29,7 +32,13 @@
     "plugins": [
       "expo-sharing",
       "@react-native-community/datetimepicker",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Heo Đất Béo cần quyền truy cập microphone để ghi âm và lưu nhanh giao dịch."
+        }
+      ]
     ],
     "notification": {
       "icon": "./assets/savepig.jpg",
