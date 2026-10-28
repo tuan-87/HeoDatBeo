@@ -1,7 +1,7 @@
 [
   {
     "version": "28.10.2026",
-    "description": "- Tích hợp ghi giao dịch qua giọng nói",
+    "description": "- Tích hợp ghi giao dịch qua giọng nói\n- Tích hợp ghi giao dịch qua ngân hàng",
     "order": 33
   },
   {
