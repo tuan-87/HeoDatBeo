@@ -22,9 +22,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.satsboy87.heodatbeo",
       "versionCode": 32,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/savepig.jpg"
