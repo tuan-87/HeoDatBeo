@@ -79,6 +79,20 @@ export const bankStorage = {
     }
   },
 
+  async removePendingBankTransactionByNotificationKey(key: string): Promise<boolean> {
+    try {
+      const currentList = await this.getPendingBankTransactions();
+      const updatedList = currentList.filter(
+        (item) => item.notificationKey !== key && item.id !== key
+      );
+      await this.savePendingBankTransactions(updatedList);
+      return true;
+    } catch (e) {
+      console.error('Error removing pending bank transaction by key', e);
+      return false;
+    }
+  },
+
   async clearAllPendingBankTransactions(): Promise<boolean> {
     try {
       await setStorageItem(PENDING_BANK_TXS_KEY, JSON.stringify([]));

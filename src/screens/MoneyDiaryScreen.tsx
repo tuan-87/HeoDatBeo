@@ -9,7 +9,6 @@ import {
   Image,
 } from "react-native";
 import { Alert } from "../components/CustomAlert";
-import LinearGradient from 'react-native-linear-gradient';
 import { VoiceRecordingModal } from '../components/VoiceRecordingModal';
 import { PendingBankTransactionsModal } from '../components/PendingBankTransactionsModal';
 import {
@@ -27,7 +26,6 @@ import {
   ChevronRight,
   RotateCcw,
   Mic,
-  Sparkles,
   Landmark,
 } from "lucide-react-native";
 import { storage } from "../store/storage";
@@ -73,7 +71,16 @@ const MoneyDiaryScreen = () => {
     pendingTransactions: pendingBankTxs,
     ignoreTransaction: handleIgnoreBankTransaction,
     clearAllTransactions: handleClearAllBankTransactions,
+    isModalRequested,
+    resetModalRequested,
   } = useBankWatcher();
+
+  useEffect(() => {
+    if (isModalRequested) {
+      setBankModalVisible(true);
+      resetModalRequested();
+    }
+  }, [isModalRequested]);
   const [streakModalData, setStreakModalData] = useState<{
     count: number;
     status: StreakStatus;
@@ -579,22 +586,13 @@ const MoneyDiaryScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Nút Ghi chép bằng Giọng nói */}
+            {/* Nút Ghi chép bằng Giọng nói (Icon tròn màu xanh dương) */}
             <TouchableOpacity
               style={styles.voiceRecordButton}
               activeOpacity={0.8}
               onPress={handleOpenVoiceModal}
             >
-              <LinearGradient
-                colors={["#4338ca", "#3b82f6"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.voiceRecordGradient}
-              >
-                <Mic color="#ffffff" size={17} />
-                <Text style={styles.voiceRecordText}>Ghi chép bằng giọng nói</Text>
-                <Sparkles color="#fbbf24" size={15} />
-              </LinearGradient>
+              <Mic color="#ffffff" size={24} />
             </TouchableOpacity>
           </View>
 
@@ -734,7 +732,9 @@ const MoneyDiaryScreen = () => {
         transactions={pendingBankTxs}
         categories={[
           ...expenseCategories.map((c) => ({ id: c.id, name: c.name, type: 'expense' as const })),
+          { id: 'expense_khac', name: 'Khác', type: 'expense' as const },
           ...incomeCategories.map((c) => ({ id: c.id, name: c.name, type: 'income' as const })),
+          { id: 'income_khac', name: 'Khác', type: 'income' as const },
         ]}
         onConfirmTransaction={handleConfirmBankTransaction}
         onIgnoreTransaction={handleIgnoreBankTransaction}
@@ -747,7 +747,9 @@ const MoneyDiaryScreen = () => {
         onClose={() => setVoiceModalVisible(false)}
         categories={[
           ...expenseCategories.map((c) => ({ id: c.id, name: c.name, type: 'expense' as const })),
+          { id: 'expense_khac', name: 'Khác', type: 'expense' as const },
           ...incomeCategories.map((c) => ({ id: c.id, name: c.name, type: 'income' as const })),
+          { id: 'income_khac', name: 'Khác', type: 'income' as const },
         ]}
         onSaveTransactions={handleSaveVoiceTransactions}
       />

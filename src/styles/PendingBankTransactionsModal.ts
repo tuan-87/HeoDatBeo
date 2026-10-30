@@ -130,17 +130,28 @@ export const styles = StyleSheet.create({
     color: '#94a3b8',
     marginLeft: 'auto',
   },
-  noteBox: {
-    backgroundColor: '#ffffff',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    marginBottom: 10,
+  noteInputLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748b',
+    marginBottom: 4,
   },
-  noteText: {
+  noteInput: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     fontSize: 13,
-    color: '#334155',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  rawNoteHint: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
   categoryLabel: {
     fontSize: 12,

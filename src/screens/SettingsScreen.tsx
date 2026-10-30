@@ -53,6 +53,7 @@ import {
   ChartNoAxesCombined,
   Globe,
   Landmark,
+  QrCode,
 } from "lucide-react-native";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -197,7 +198,8 @@ const SettingsScreen = () => {
   const [isNotesModalVisible, setNotesModalVisible] = useState(false);
   const { language, changeLanguage, t } = useLanguage();
   const [isLangModalVisible, setLangModalVisible] = useState(false);
-  const [isBankSettingsModalVisible, setBankSettingsModalVisible] = useState(false);
+  const [isBankSettingsModalVisible, setBankSettingsModalVisible] =
+    useState(false);
   const [notesTab, setNotesTab] = useState<"expense" | "income">("expense");
   const [newNoteText, setNewNoteText] = useState("");
   const [suggestedNotes, setSuggestedNotes] = useState<string[]>([]);
@@ -333,38 +335,31 @@ const SettingsScreen = () => {
   };
 
   const handleGoogleLogout = async () => {
-    Alert.alert(
-      t("settings.confirmLogout"),
-      t("settings.confirmLogoutMsg"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("settings.logoutBtn"),
-          style: "destructive",
-          onPress: async () => {
-            const res = await signOutGoogle();
-            if (res.success) {
-              setIsGoogleSignedIn(false);
-              setGoogleUserEmail(null);
-              setIsAutoBackupEnabled(false);
-              await storage.setGoogleDriveAutoBackupEnabled(false);
-              Alert.alert(
-                t("settings.logoutSuccess"),
-                t("settings.logoutSuccessMsg"),
-              );
-            }
-          },
+    Alert.alert(t("settings.confirmLogout"), t("settings.confirmLogoutMsg"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("settings.logoutBtn"),
+        style: "destructive",
+        onPress: async () => {
+          const res = await signOutGoogle();
+          if (res.success) {
+            setIsGoogleSignedIn(false);
+            setGoogleUserEmail(null);
+            setIsAutoBackupEnabled(false);
+            await storage.setGoogleDriveAutoBackupEnabled(false);
+            Alert.alert(
+              t("settings.logoutSuccess"),
+              t("settings.logoutSuccessMsg"),
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleToggleAutoBackup = async (value: boolean) => {
     if (!isGoogleSignedIn) {
-      Alert.alert(
-        t("settings.loginRequired"),
-        t("settings.loginRequiredMsg"),
-      );
+      Alert.alert(t("settings.loginRequired"), t("settings.loginRequiredMsg"));
       return;
     }
     const success = await storage.setGoogleDriveAutoBackupEnabled(value);
@@ -408,10 +403,7 @@ const SettingsScreen = () => {
 
   const handleRestoreFromGoogleDrive = async () => {
     if (!isGoogleSignedIn) {
-      Alert.alert(
-        t("settings.loginRequired"),
-        t("settings.loginRequiredMsg"),
-      );
+      Alert.alert(t("settings.loginRequired"), t("settings.loginRequiredMsg"));
       return;
     }
 
@@ -442,7 +434,9 @@ const SettingsScreen = () => {
 
       Alert.alert(
         t("settings.restoreConfirmTitle"),
-        t("settings.restoreConfirmMsg").replace("{name}", detailsRes.name!).replace("{time}", formattedTime),
+        t("settings.restoreConfirmMsg")
+          .replace("{name}", detailsRes.name!)
+          .replace("{time}", formattedTime),
         [
           { text: t("settings.restoreCancelBtn"), style: "cancel" },
           {
@@ -476,7 +470,10 @@ const SettingsScreen = () => {
                   Alert.alert(t("settings.restoreGenericError"), res.message);
                 }
               } catch (e: any) {
-                Alert.alert(t("common.error"), e.message || t("settings.generalError"));
+                Alert.alert(
+                  t("common.error"),
+                  e.message || t("settings.generalError"),
+                );
               } finally {
                 setIsRestoring(false);
               }
@@ -531,10 +528,7 @@ const SettingsScreen = () => {
           dialogTitle: t("settings.backupSuccess"),
         });
       } else {
-        Alert.alert(
-          t("common.error"),
-          t("settings.exportShareError"),
-        );
+        Alert.alert(t("common.error"), t("settings.exportShareError"));
       }
     } catch (e) {
       console.error(e);
@@ -556,16 +550,10 @@ const SettingsScreen = () => {
 
         const success = await storage.importData(fileContent);
         if (success) {
-          Alert.alert(
-            t("common.success"),
-            t("settings.importSuccess"),
-          );
+          Alert.alert(t("common.success"), t("settings.importSuccess"));
           loadProfile();
         } else {
-          Alert.alert(
-            t("common.error"),
-            t("settings.importError"),
-          );
+          Alert.alert(t("common.error"), t("settings.importError"));
         }
       }
     } catch (e) {
@@ -575,38 +563,31 @@ const SettingsScreen = () => {
   };
 
   const handleReset = () => {
-    Alert.alert(
-      t("settings.resetWarning"),
-      t("settings.resetWarningMsg"),
-      [
-        { text: t("settings.resetCancelBtn"), style: "cancel" },
-        {
-          text: t("settings.resetBtn"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await signOutGoogle();
-            } catch (e) {
-              console.error(
-                "Error signing out Google during factory reset:",
-                e,
-              );
-            }
-            const success = await storage.clearUserResetData();
-            if (success) {
-              navigation.dispatch(
-                CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: "Setup" }],
-                }),
-              );
-            } else {
-              Alert.alert(t("common.error"), t("settings.resetError"));
-            }
-          },
+    Alert.alert(t("settings.resetWarning"), t("settings.resetWarningMsg"), [
+      { text: t("settings.resetCancelBtn"), style: "cancel" },
+      {
+        text: t("settings.resetBtn"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await signOutGoogle();
+          } catch (e) {
+            console.error("Error signing out Google during factory reset:", e);
+          }
+          const success = await storage.clearUserResetData();
+          if (success) {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: "Setup" }],
+              }),
+            );
+          } else {
+            Alert.alert(t("common.error"), t("settings.resetError"));
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleAddCategory = async () => {
@@ -808,75 +789,81 @@ const SettingsScreen = () => {
       (t) => t.categoryId && catId && isCategoryIdMatch(t.categoryId, catId),
     );
 
-    Alert.alert(t("common.warning"), t("settings.confirmDeleteCategory").replace("{name}", catName), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: async () => {
-          if (activeCategoryTab === "income") {
-            const current = profile.incomeCategories || [];
-            let updatedCats: any[];
-            if (hasTx) {
-              updatedCats = current.map((c: any) => {
-                if (typeof c === "string") {
-                  const fallbackId =
-                    "income_" +
-                    c.toLowerCase().replace(/[^a-z0-9]/g, "_") +
-                    "_" +
-                    Math.random().toString(36).substr(2, 5);
-                  if (c === catName) {
-                    return { id: fallbackId, name: c, deleteAt: Date.now() };
+    Alert.alert(
+      t("common.warning"),
+      t("settings.confirmDeleteCategory").replace("{name}", catName),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            if (activeCategoryTab === "income") {
+              const current = profile.incomeCategories || [];
+              let updatedCats: any[];
+              if (hasTx) {
+                updatedCats = current.map((c: any) => {
+                  if (typeof c === "string") {
+                    const fallbackId =
+                      "income_" +
+                      c.toLowerCase().replace(/[^a-z0-9]/g, "_") +
+                      "_" +
+                      Math.random().toString(36).substr(2, 5);
+                    if (c === catName) {
+                      return { id: fallbackId, name: c, deleteAt: Date.now() };
+                    }
+                    return { id: fallbackId, name: c };
                   }
-                  return { id: fallbackId, name: c };
-                }
-                if (c.id === catId || c.name === catName) {
-                  return { ...c, deleteAt: Date.now() };
-                }
-                return c;
-              });
+                  if (c.id === catId || c.name === catName) {
+                    return { ...c, deleteAt: Date.now() };
+                  }
+                  return c;
+                });
+              } else {
+                updatedCats = current.filter((c: any) =>
+                  typeof c === "string" ? c !== catName : c.id !== catId,
+                );
+              }
+              const updatedProfile = {
+                ...profile,
+                incomeCategories: updatedCats,
+              };
+              const success = await storage.saveUserProfile(updatedProfile);
+              if (success) {
+                setProfile(updatedProfile);
+              }
             } else {
-              updatedCats = current.filter((c: any) =>
-                typeof c === "string" ? c !== catName : c.id !== catId,
-              );
+              // Delete Expense Category (CategoryBudget)
+              const allBudgets = await storage.getCategoryBudgets();
+              let updatedBudgets: CategoryBudget[];
+              if (hasTx) {
+                updatedBudgets = allBudgets.map((b) => {
+                  const isMatch =
+                    b.id && catId
+                      ? isCategoryIdMatch(b.id, catId)
+                      : b.name === catName;
+                  return isMatch
+                    ? { ...b, deleteAt: Date.now(), budget: 0 }
+                    : b;
+                });
+              } else {
+                updatedBudgets = allBudgets.filter(
+                  (b) => b.id !== catId && b.name !== catName,
+                );
+              }
+              const success = await storage.saveCategoryBudgets(updatedBudgets);
+              if (success) {
+                setCategoryBudgets(
+                  updatedBudgets.filter(
+                    (b) => b.deleteAt === null || b.deleteAt === undefined,
+                  ),
+                );
+              }
             }
-            const updatedProfile = {
-              ...profile,
-              incomeCategories: updatedCats,
-            };
-            const success = await storage.saveUserProfile(updatedProfile);
-            if (success) {
-              setProfile(updatedProfile);
-            }
-          } else {
-            // Delete Expense Category (CategoryBudget)
-            const allBudgets = await storage.getCategoryBudgets();
-            let updatedBudgets: CategoryBudget[];
-            if (hasTx) {
-              updatedBudgets = allBudgets.map((b) => {
-                const isMatch =
-                  b.id && catId
-                    ? isCategoryIdMatch(b.id, catId)
-                    : b.name === catName;
-                return isMatch ? { ...b, deleteAt: Date.now(), budget: 0 } : b;
-              });
-            } else {
-              updatedBudgets = allBudgets.filter(
-                (b) => b.id !== catId && b.name !== catName,
-              );
-            }
-            const success = await storage.saveCategoryBudgets(updatedBudgets);
-            if (success) {
-              setCategoryBudgets(
-                updatedBudgets.filter(
-                  (b) => b.deleteAt === null || b.deleteAt === undefined,
-                ),
-              );
-            }
-          }
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleOpenRenameModal = (catId: string, catName: string) => {
@@ -1070,7 +1057,10 @@ const SettingsScreen = () => {
       </View>
 
       <ScrollView
-          showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={styles.body}>
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.body}
+      >
         <TouchableOpacity
           style={styles.card}
           onPress={() => setLangModalVisible(true)}
@@ -1099,6 +1089,19 @@ const SettingsScreen = () => {
           </View>
           <View style={styles.cardContent}>
             <Text style={styles.cardTitle}>{t("settings.personalInfo")}</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* QR Ngân hàng */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => (navigation as any).navigate("BankQR")}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: "#ecfdf5" }]}>
+            <QrCode color="#059669" size={18} />
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>QR Ngân hàng</Text>
           </View>
         </TouchableOpacity>
 
@@ -1278,7 +1281,6 @@ const SettingsScreen = () => {
       />
 
       {/* Modal: Quản lý ghi chú gợi ý */}
-      
 
       {/* Modal Chọn Ngôn ngữ */}
       <LanguageSelectModal

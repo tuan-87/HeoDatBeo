@@ -42,9 +42,11 @@ export const signInGoogle = async () => {
     }
   } catch (error: any) {
     console.error('Lỗi đăng nhập Google Sign-In:', error);
+    const codeStr = error?.code != null ? `[Mã lỗi: ${error.code}] ` : '';
+    const errMsg = error?.message || String(error);
     return {
       success: false,
-      error: error.message || String(error),
+      error: `${codeStr}${errMsg}`,
     };
   }
 };

@@ -8,6 +8,7 @@ import SavingHistoryScreen from "../screens/SavingHistoryScreen";
 import FundHistoryScreen from "../screens/FundHistoryScreen";
 import GuideScreen from "../screens/GuideScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import BankQRScreen from "../screens/BankQRScreen";
 import GoldHistoryScreen from "../screens/GoldHistoryScreen";
 import DeletedCategoriesScreen from "../screens/DeletedCategoriesScreen";
 import DeletedFundsScreen from "../screens/DeletedFundsScreen";
@@ -16,6 +17,7 @@ import AIAssistantScreen from "../screens/AIAssistantScreen";
 import { storage } from "../store/storage";
 import { View, ActivityIndicator } from "react-native";
 import { scheduleDailyReminder } from "../utils/notifications";
+import { BankNotificationService } from "../services/bankNotification.service";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +32,8 @@ const RootNavigator = () => {
       setIsLoading(false);
       // Đăng ký nhắc nhở ghi giao dịch lúc 22h hàng ngày
       scheduleDailyReminder();
+      // Quét và đồng bộ thông báo ngân hàng ngay khi khởi chạy app
+      BankNotificationService.syncQueuedNotifications();
     };
     checkProfile();
   }, []);
@@ -54,8 +58,12 @@ const RootNavigator = () => {
       <Stack.Screen name="FundHistory" component={FundHistoryScreen} />
       <Stack.Screen name="Guide" component={GuideScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="BankQR" component={BankQRScreen} />
       <Stack.Screen name="GoldHistory" component={GoldHistoryScreen} />
-      <Stack.Screen name="DeletedCategories" component={DeletedCategoriesScreen} />
+      <Stack.Screen
+        name="DeletedCategories"
+        component={DeletedCategoriesScreen}
+      />
       <Stack.Screen name="DeletedFunds" component={DeletedFundsScreen} />
       <Stack.Screen name="YearlyReport" component={YearlyReportScreen} />
       <Stack.Screen name="AIAssistant" component={AIAssistantScreen} />

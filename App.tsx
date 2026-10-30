@@ -7,6 +7,7 @@ import * as Notifications from 'expo-notifications';
 import { CustomAlert } from './src/components/CustomAlert';
 import { storage } from './src/store/storage';
 import { LanguageProvider } from './src/i18n/LanguageContext';
+import { BankNotificationService } from './src/services/bankNotification.service';
 
 const navigationRef = createNavigationContainerRef<any>();
 
@@ -14,6 +15,15 @@ export default function App() {
   const [isReady, setIsReady] = useState(false);
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
   const handledNotifications = useRef<string[]>([]);
+
+  useEffect(() => {
+    const unsub = BankNotificationService.subscribeOpenBankModal(() => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('MainApp', { screen: 'Home' });
+      }
+    });
+    return () => unsub();
+  }, []);
 
 
 

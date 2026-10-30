@@ -12,6 +12,8 @@ export const BANK_PACKAGE_INFO: Record<string, { name: string; shortName: string
   'com.VCB': { name: 'Vietcombank', shortName: 'VCB', color: '#006633' },
   'com.tcb': { name: 'Techcombank', shortName: 'TCB', color: '#e31837' },
   'vn.com.techcombank.bb.app': { name: 'Techcombank', shortName: 'TCB', color: '#e31837' },
+  'com.techcombank.mobile': { name: 'Techcombank', shortName: 'TCB', color: '#e31837' },
+  'vn.com.techcombank.business': { name: 'Techcombank', shortName: 'TCB', color: '#e31837' },
   'com.mbmobile': { name: 'MB Bank', shortName: 'MB', color: '#1c429c' },
   'com.tpb.mb.gprsandroid': { name: 'TPBank', shortName: 'TPB', color: '#79298e' },
   'com.vietinbank.ipay': { name: 'VietinBank', shortName: 'CTG', color: '#0054a6' },
@@ -21,6 +23,7 @@ export const BANK_PACKAGE_INFO: Record<string, { name: string; shortName: string
   'com.vnpay.bidv': { name: 'BIDV', shortName: 'BIDV', color: '#004f9e' },
   'com.mservice.momotransfer': { name: 'MoMo', shortName: 'MOMO', color: '#a50064' },
   'vn.com.vng.zalopay': { name: 'ZaloPay', shortName: 'ZLP', color: '#008fe5' },
+  'com.zing.zalo': { name: 'ZaloPay', shortName: 'ZLP', color: '#008fe5' },
   'com.shb.mobile': { name: 'SHB', shortName: 'SHB', color: '#f26522' },
   'com.seabank.mb': { name: 'SeABank', shortName: 'SEA', color: '#ed1c24' },
   'vn.com.scb.mb': { name: 'SCB', shortName: 'SCB', color: '#00529c' },
@@ -83,21 +86,29 @@ export function parseBankNotification(payload: RawNotificationPayload): PendingB
   const fullText = `${title || ''} ${content || ''}`.trim();
   if (!fullText) return null;
 
-  // Lọc thông báo quảng cáo / bảo mật / OTP / tin rác
+  // Lọc thông báo OTP thuần túy (không chứa số tiền biến động) hoặc cảnh báo bảo mật/đăng nhập
   const lower = fullText.toLowerCase();
-  if (
-    lower.includes('ma otp') ||
-    lower.includes('mã otp') ||
-    lower.includes('canh bao') ||
-    lower.includes('cảnh báo') ||
-    lower.includes('uu dai') ||
-    lower.includes('ưu đãi') ||
-    lower.includes('voucher') ||
-    lower.includes('khuyen mai') ||
-    lower.includes('khuyến mãi') ||
-    lower.includes('quay thuong') ||
-    lower.includes('đăng nhập mới')
-  ) {
+  const hasOtpKeyword = lower.includes('ma otp') || lower.includes('mã otp') || lower.includes('otp:');
+  const hasBalanceKeywords =
+    lower.includes('so du') ||
+    lower.includes('số dư') ||
+    lower.includes('bien dong') ||
+    lower.includes('biến động') ||
+    lower.includes('+') ||
+    lower.includes('-');
+  if (hasOtpKeyword && !hasBalanceKeywords) {
+    return null;
+  }
+
+  const isSecurityAlert =
+    lower.includes('đăng nhập trên thiết bị mới') ||
+    lower.includes('dang nhap tren thiet bi moi') ||
+    lower.includes('cảnh báo đăng nhập') ||
+    lower.includes('canh bao dang nhap') ||
+    lower.includes('khóa thẻ thành công') ||
+    lower.includes('khoa the thanh cong');
+
+  if (isSecurityAlert) {
     return null;
   }
 
@@ -114,6 +125,10 @@ export function parseBankNotification(payload: RawNotificationPayload): PendingB
   let refCode: string | undefined;
   let note = '';
 
+  const CURRENCY_PATTERN = '(?:VND|đ|VNĐ|đồng|dong|d\\b)';
+  const CURRENCY_BEFORE = '(?:VND|đ|VNĐ|đồng|dong)';
+  const NUMBER_PATTERN = '([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]+)';
+
   // 1. Trích xuất Mã GD / Ref Code (nếu có)
   const refMatch = fullText.match(/(?:Ref|Mã GD|Trace|F\/T|FT|GD)[\s:]*([A-Za-z0-9]{6,25})/i);
   if (refMatch) {
@@ -126,16 +141,25 @@ export function parseBankNotification(payload: RawNotificationPayload): PendingB
     accountNumber = accMatch[1].slice(-4); // Lấy 4 số cuối
   }
 
-  // 3. Trích xuất Số dư cuối (Số dư: 1,950,000 VND hoặc SD: 1.950.000đ)
-  const balMatch = fullText.match(/(?:Số dư|So du|SD)[\s:]*([0-9.,]+)\s*(?:VND|đ|d)/i);
+  // 3. Trích xuất Số dư cuối (Số dư: VND 1,950,000 hoặc Số dư: 1,950,000 VND hoặc SD: 1.950.000đ)
+  const balMatch = fullText.match(new RegExp(`(?:Số dư|So du|SD)[\\s:]*(?:${CURRENCY_BEFORE})?\\s*${NUMBER_PATTERN}\\s*(?:${CURRENCY_PATTERN})?`, 'i'));
   if (balMatch) {
     balanceAfter = parseAmount(balMatch[1]);
   }
 
   // 4. Trích xuất Loại GD & Số tiền
-  // Case A: Vietcombank / Techcombank / MB / ACB dạng: -50,000 VND hoặc +50,000 VND
-  const explicitSignMatch = fullText.match(/([+-])\s*([0-9.,]+)\s*(?:VND|đ|d)/i);
-  if (explicitSignMatch) {
+  // Case A1: Techcombank dạng: + VND 15,000 hoặc - VND 50,000
+  const explicitCurrencyFirst = fullText.match(new RegExp(`([+-])\\s*${CURRENCY_BEFORE}\\s*${NUMBER_PATTERN}`, 'i'));
+
+  // Case A2: Vietcombank / MB / ACB dạng: + 15,000 VND hoặc - 50.000đ
+  const explicitWithUnit = !explicitCurrencyFirst ? fullText.match(new RegExp(`([+-])\\s*${NUMBER_PATTERN}\\s*${CURRENCY_PATTERN}`, 'i')) : null;
+
+  // Case A3: Dạng có dấu +/- nhưng không có đơn vị tiền liền kề: + 15,000 hoặc - 50.000
+  const explicitWithoutUnit = (!explicitCurrencyFirst && !explicitWithUnit) ? fullText.match(/([+-])\s*([0-9]{1,3}(?:[.,][0-9]{3})+)/i) : null;
+
+  const explicitSignMatch = explicitCurrencyFirst || explicitWithUnit || explicitWithoutUnit;
+
+  if (explicitSignMatch && parseAmount(explicitSignMatch[2]) > 0) {
     type = explicitSignMatch[1] === '+' ? 'income' : 'expense';
     amount = parseAmount(explicitSignMatch[2]);
   } else {
@@ -150,8 +174,12 @@ export function parseBankNotification(payload: RawNotificationPayload): PendingB
 
     type = isIncome ? 'income' : 'expense';
 
-    // Tìm số tiền kèm VND hoặc đ
-    const amtMatch = fullText.match(/(?:GD|thanh toán|chuyển|nhận)?[\s:]*([0-9.,]+)\s*(?:VND|đ|d)/i);
+    // Case B1: Đơn vị tiền trước số tiền: VND 45,000
+    const amtCurrFirst = fullText.match(new RegExp(`(?:GD|thanh toán|chuyển|nhận|tiền|thành công|biến động|trừ|cộng)?[\\s:]*${CURRENCY_BEFORE}\\s*${NUMBER_PATTERN}`, 'i'));
+    // Case B2: Số tiền trước đơn vị tiền: 45,000 VND
+    const amtCurrLast = !amtCurrFirst ? fullText.match(new RegExp(`(?:GD|thanh toán|chuyển|nhận|tiền|thành công|biến động|trừ|cộng)?[\\s:]*${NUMBER_PATTERN}\\s*${CURRENCY_PATTERN}`, 'i')) : null;
+
+    const amtMatch = amtCurrFirst || amtCurrLast;
     if (amtMatch) {
       amount = parseAmount(amtMatch[1]);
     }
@@ -194,6 +222,7 @@ export function parseBankNotification(payload: RawNotificationPayload): PendingB
     refCode,
     timestamp: postTime || Date.now(),
     rawText: fullText,
+    notificationKey: payload.notificationKey,
   };
 }
 

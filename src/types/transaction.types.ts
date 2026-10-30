@@ -24,5 +24,6 @@ export interface PendingBankTransaction {
   refCode?: string;
   timestamp: number;
   rawText?: string;
+  notificationKey?: string;
 }
 

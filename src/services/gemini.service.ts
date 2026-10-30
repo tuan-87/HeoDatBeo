@@ -275,11 +275,8 @@ ${langInstruction}
 
   // Danh sách model thử nghiệm theo thứ tự ưu tiên (Free tier Google AI Studio)
   const modelsToTry = [
-    'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
     'gemini-3.8-flash',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
+    'gemini-3.5-flash',
   ];
 
   let lastError = '';
@@ -305,8 +302,12 @@ ${langInstruction}
         const errText = await response.text();
         console.warn(`Gemini model ${model} failed with status ${response.status}:`, errText);
         lastError = `HTTP ${response.status}: ${errText}`;
+        if (response.status === 503 || response.status === 429 || errText.includes('high demand') || errText.includes('UNAVAILABLE')) {
+          throw new Error('OVERLOADED');
+        }
       }
     } catch (e: any) {
+      if (e?.message === 'OVERLOADED') throw e;
       console.warn(`Error calling model ${model}:`, e);
       lastError = e?.message || 'Network error';
     }
@@ -411,8 +412,6 @@ Chỉ trả về DUY NHẤT một JSON array chuẩn cú pháp, KHÔNG kèm gi�
   const modelsToTry = [
     'gemini-3.8-flash',
     'gemini-3.5-flash',
-    'gemini-2.5-flash',
-    'gemini-1.5-flash',
   ];
 
   let lastError = '';
@@ -446,8 +445,12 @@ Chỉ trả về DUY NHẤT một JSON array chuẩn cú pháp, KHÔNG kèm gi�
         const errText = await response.text();
         console.warn(`Voice parse model ${model} failed with status ${response.status}:`, errText);
         lastError = `HTTP ${response.status}: ${errText}`;
+        if (response.status === 503 || response.status === 429 || errText.includes('high demand') || errText.includes('UNAVAILABLE') || errText.includes('RESOURCE_EXHAUSTED')) {
+          throw new Error('OVERLOADED');
+        }
       }
     } catch (e: any) {
+      if (e?.message === 'OVERLOADED') throw e;
       console.warn(`Voice parse call failed for ${model}:`, e);
       lastError = e?.message || 'Network error';
     }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Heo Đất Béo",
     "slug": "HeoDatBeo",
-    "version": "26.10.2026",
+    "version": "29.10.2026",
     "orientation": "portrait",
     "icon": "./assets/savepig.jpg",
     "userInterfaceStyle": "light",
@@ -21,8 +21,11 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.satsboy87.heodatbeo",
-      "versionCode": 32,
-      "permissions": ["android.permission.RECORD_AUDIO"]
+      "versionCode": 34,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/savepig.jpg"

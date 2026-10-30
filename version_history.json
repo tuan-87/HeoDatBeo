@@ -1,5 +1,10 @@
 [
   {
+    "version": "29.10.2026",
+    "description": "- Sửa lgiao diện khi ỗi ghi chép bằng giọng nói \n- Chỉnh sửa giao diện hiển thị ngân hàng\n- Cập nhật modal ghi chép lịch sử qua thông báo ngân hàng\n- Thông báo nổi nhắc nhở duyệt giao dịch được ghi nhận từ ngân hàng",
+    "order": 34
+  },
+  {
     "version": "28.10.2026",
     "description": "- Tích hợp ghi giao dịch qua giọng nói\n- Tích hợp ghi giao dịch qua ngân hàng",
     "order": 33

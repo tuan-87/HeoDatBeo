@@ -227,6 +227,16 @@ export const VoiceRecordingModal: React.FC<VoiceRecordingModalProps> = ({
         onClose();
         return;
       }
+      if (
+        error?.message === 'OVERLOADED' ||
+        error?.message?.includes('quá tải') ||
+        error?.message?.includes('high demand') ||
+        error?.message?.includes('503')
+      ) {
+        Alert.alert('Thông báo', 'Hệ thống đang quá tải, vui lòng ghi chép thủ công');
+        onClose();
+        return;
+      }
       setModalState('empty');
     }
   };

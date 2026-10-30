@@ -17,6 +17,7 @@ export type RootStackParamList = {
   Guide: undefined;
   BarChart: { selectedMonth: string | null };
   Profile: undefined;
+  BankQR: undefined;
   GoldHistory: undefined;
   DeletedCategories: undefined;
   DeletedFunds: undefined;

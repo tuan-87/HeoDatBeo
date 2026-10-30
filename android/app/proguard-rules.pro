@@ -12,3 +12,14 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+-keep public class com.satsboy87.heodatbeo.BankNotificationListenerService { *; }
+-keep public class com.satsboy87.heodatbeo.BankNotificationModule { *; }
+-keep public class com.satsboy87.heodatbeo.BankNotificationPackage { *; }
+-keep public class com.satsboy87.heodatbeo.BankNotificationActionReceiver { *; }
+-keep public class com.satsboy87.heodatbeo.ScreenBrightnessModule { *; }
+-keepclassmembers class com.satsboy87.heodatbeo.BankNotificationModule {
+    @com.facebook.react.bridge.ReactMethod *;
+}
+-keepclassmembers class com.satsboy87.heodatbeo.ScreenBrightnessModule {
+    @com.facebook.react.bridge.ReactMethod *;
+}
